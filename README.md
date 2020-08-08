@@ -1,4 +1,6 @@
-# Nature of collective decision-making by simple yes/no units #
+# Nature of collective decision-making by simple yes/no units # 
+**Eisuke Hasegawa, Nobuaki Mizumoto, Kazuya Kobayashi , Shigeto Dobata,
+JinYoshimura, Saori Watanabe, Yuuka Murakami & Kenji Matsuura**
 
 Clone this repository and run the main programe in order to visualize results.
 
