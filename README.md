@@ -1,29 +1,21 @@
-# README #
+# Nature of collective decision-making by simple yes/no units # 
+**Eisuke Hasegawa, Nobuaki Mizumoto, Kazuya Kobayashi , Shigeto Dobata,
+JinYoshimura, Saori Watanabe, Yuuka Murakami & Kenji Matsuura**
 
-This README would normally document whatever steps are necessary to get your application up and running.
+Clone this repository and run the main programe in order to visualize results.
 
 ### What is this repository for? ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+* How does the rate of making correct decision depends on parameters like acceptance-threshold distribution, quality distribution, decision-making unit distribution and more.
+* Version 1.0
 
 ### How do I get set up? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+* Dependencies  
 
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
+1. Numpy
+2. Matplotlib.pyplot
 
 ### Who do I talk to? ###
 
-* Repo owner or admin
-* Other community or team contact
+* Repo owner or admin : **Swadhin Agrawal**
