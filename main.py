@@ -31,12 +31,12 @@ def units_assign_to_opt(Dh,Dm,number_of_options):
 
     return np.array(packs)
 
-def vote_counter(Dx,assigned):
+def vote_counter(Dx,assigned,assesment_error):
     votes = []
     for i in range(len(assigned)):
         count = 0
         for j in assigned[i]:
-            if j["threshold"] < Dx[i]:
+            if j["threshold"] + assesment_error < Dx[i] or j["threshold"] - assesment_error < Dx[i]:
                 count += 1
         votes.append(count)
     return votes
@@ -58,13 +58,15 @@ sigmah = 4.0
 mum = 2000.0
 sigmam = 0.0
 
+assesment_error = 0.2
+
 Dx = np.random.normal(mux,sigmax,number_of_options)
 Dh = np.random.normal(muh,sigmah,population_size)
 Dm = dm(population_size,number_of_options)
 
 assigned = units_assign_to_opt(Dh,Dm,number_of_options)
 
-results = vote_counter(Dx,assigned)
+results = vote_counter(Dx,assigned,assesment_error)
 
 option_votes = []
 for i in range(number_of_options):
