@@ -37,12 +37,21 @@ class Decision_making:
         self.vote_for_opt = None
 
     def ref_highest_qual(self):
+        """
+        Provides known highest quality option
+        """
         self.ref_highest_quality = np.where(self.Dx == max(self.Dx))[0][0]
 
     def dh(self):
+        """
+        Provides distribution of thresholds for each unit upto specified decimal places
+        """
         self.Dh = np.round(np.random.normal(self.mu_h,self.sigma_h,self.population_size),decimals=self.h_type)
 
     def dx(self):
+        """
+        Provides distribution of quality stimulus for each option upto specified decimal places
+        """        
         self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
 
     def dm(self):
@@ -86,16 +95,25 @@ class Decision_making:
         self.votes = votes
 
     def vote_associator(self):
+        """
+        Associates option with number of votes it received
+        """
         option_votes = []
         for i in range(self.number_of_options):
             option_votes.append({"xi":self.Dx[i],"votes":self.votes[i]})
         self.vote_for_opt = np.array(option_votes)
 
     def one_correct(self):
+        """
+        Returns success/failure of decision making when there is only one correct decision
+        """
         if np.where(self.vote_for_opt == max(self.vote_for_opt, key = lambda i: i['votes']))[0][0] == self.ref_highest_quality:
             return 1
 
     def multi_correct(self):
+        """
+        Returns success/failure of decision making when there are multiple correct decisions as per the units
+        """        
         available_opt = np.where(self.vote_for_opt == max(self.vote_for_opt, key = lambda i: i['votes']))[0]
         opt_choosen = np.random.randint(0,len(available_opt))
         if available_opt[opt_choosen] ==  self.ref_highest_quality:
