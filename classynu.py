@@ -12,10 +12,9 @@ import matplotlib.pyplot as plt
 #%%
 
 class Decision_making:
-    def __init__(self,population_size,number_of_options,x_type,h_type, m_type ,err_type):
+    def __init__(self,population_size,number_of_options,x_type,h_type ,err_type):
         self.x_type = x_type
         self.h_type = h_type
-        self.m_type = m_type
         self.err_type = err_type
         self.population_size = population_size
         self.number_of_options = number_of_options
@@ -61,10 +60,8 @@ class Decision_making:
         """
         sum = self.population_size + 1
         while sum > self.population_size:
-            Dm = np.round(np.random.normal(self.mu_m,self.sigma_m,self.number_of_options),decimals=self.m_type)
-            sum = 0
-            for m in Dm:
-                sum += int(m)
+            Dm = np.round(np.random.normal(self.mu_m,self.sigma_m,self.number_of_options),decimals=0)
+            sum = np.sum(Dm)
         self.Dm = Dm
 
     def units_assign_to_opt(self):
