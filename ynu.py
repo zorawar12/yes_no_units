@@ -10,12 +10,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import classynu as yn
 from multiprocessing import Pool
+from operator import itemgetter 
 
 #%%
 
-def majority_decision(population_size = 2000,number_of_options = 10,mu_x = 10.0,\
-    sigma_x = 4.0,mu_h = 10.0,sigma_h = 4.0,mu_m = 200,sigma_m = 1,mu_assessment_err = 0.0,\
-    sigma_assessment_err = 0.0,x_type = 3,h_type = 3,err_type = 3,one_correct_opt = 1):
+def majority_decision(population_size = 500,number_of_options = 10,mu_x = 0.0,\
+    sigma_x = 1.0,mu_h = 0.0,sigma_h = 1.0,mu_m = 100,sigma_m = 0,mu_assessment_err = 0.0,\
+    sigma_assessment_err = 0.0,x_type = 3,h_type = 3,err_type = 0,one_correct_opt = 1):
     """
     Majority based decision
     """
@@ -85,37 +86,65 @@ def majority_decision(population_size = 2000,number_of_options = 10,mu_x = 10.0,
 #         sig_var.append({"sigma": j, "success_rate":count/1000})
 #     opt_var.append(sig_var)
 
-sig_h = [i/100.0 for i in range(101)]
+
+
+
+sig_h = [i/1000.0 for i in range(1001)]
 # print(sig_h)
-opts = [2*i for i in range(1,6)]
+opts = [i for i in range(2,5,2)]
+
+inp = []
+for i in opts:
+    for j in sig_h:
+        inp.append((i,j))
 
 opt_var = []
 
 
-def optsf(i):
-    global opt_var
-    sig_var = []
-    for j in sig_h:
-        count = 0
-        for k in range(1000):
-            success = majority_decision(number_of_options=i,sigma_h=j)
-            if success == 1:
-                count += 1
-        sig_var.append({"sigma": j, "success_rate":count/1000})
-    opt_var.append(sig_var)
+def sighf(op,j):
+    global opt_var,opts
+    count = 0
+    for k in range(1000):
+        success = majority_decision(number_of_options=op,sigma_h=j)
+        if success == 1:
+            count += 1
+    opt_var.append({"opt":op,"sigma": j, "success_rate":count/1000})
+    return opt_var
 
-with Pool(5) as p:
-    p.map(optsf,opts)
 
+with Pool(20) as p:
+    opt_var = p.starmap(sighf,inp)
+
+# def optsf(i):
+#     global opt_var
+#     sig_var = []
+#     for j in sig_h:
+#         count = 0
+#         for k in range(1000):
+#             success = majority_decision(number_of_options=i,sigma_h=j)
+#             if success == 1:
+#                 count += 1
+#         sig_var.append({"sigma": j, "success_rate":count/1000})
+#     opt_var.append(sig_var)
+
+# with Pool(5) as p:
+#     p.map(optsf,opts)
 #%%
-c = ["blue","green","red","purple","brown"]
-fig = plt.figure()
-count = 0
+options = [[] for i in range(len(opts))]
 for i in opt_var:
     for j in i:
-        plt.scatter(j["sigma"],j["success_rate"],c = c[count],s=0.3)    
+        options[opts.index(j["opt"])].append(j)
+opt_var = options
+# print(opt_var)
+#%%
+c = ["blue","green","red","purple","brown"]
+
+count = 0
+fig = plt.figure()
+for i in opt_var:
+    plt.scatter(list(map(itemgetter("sigma"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
     count += 1
-    plt.show()
+plt.show()
     
 
 #%%
