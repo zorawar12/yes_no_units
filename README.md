@@ -10,11 +10,13 @@ Clone this repository and run the main programe in order to visualize results.
 * Version 1.0
 
 ### How do I get set up? ###
-
+* Main program: ynu.py
 * Dependencies  
 
 1. Numpy
 2. Matplotlib.pyplot
+3. classynu
+4. operator.itemgetter
 
 ### Who do I talk to? ###
 
