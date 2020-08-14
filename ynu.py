@@ -144,12 +144,10 @@ for i in opts:
         inp.append((i,j))
 
 opt_var = []
-check = None
 pc = None
-qc = None
 
 def sighf(op,j):
-    global opt_var, pc,qc,check
+    global opt_var, pc
     count = 0
     pc = units(population_size=population_size,number_of_options=op,\
             mu_m=mu_m,sigma_m=sigma_m)
@@ -164,7 +162,6 @@ def sighf(op,j):
         if success == 1:
             count += 1
     opt_var.append({"opt":op,"sigma": j, "success_rate":count/2000})
-    check = op
     return opt_var
 
 with Pool(20) as p:
@@ -184,6 +181,51 @@ for i in opt_var:
 plt.show()
 
 #%%
+# Majority based decision with varying number of options and mu_h 
+m_h = [i/100.0 for i in range(-400,400,1)]
+opts = [2*i for i in range(2,5,2)]
+
+inp = []
+for i in opts:
+    for j in sig_h:
+        inp.append((i,j))
+
+opt_var = []
+pc = None
+
+def sighf(op,j):
+    global opt_var, pc
+    count = 0
+    pc = units(population_size=population_size,number_of_options=op,\
+            mu_m=mu_m,sigma_m=sigma_m)
+
+    for k in range(2000):
+        tc = threshold(population_size=population_size,h_type=h_type,mu_h=j,sigma_h=sigma_h)
+        qc = quality(number_of_options=op,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
+            Dm = pc.Dm,Dh = tc.Dh)
+        success = majority_decision(number_of_options=op,Dx = qc.Dx,\
+            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
+            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
+        if success == 1:
+            count += 1
+    opt_var.append({"opt":op,"mu": j, "success_rate":count/2000})
+    return opt_var
+
+with Pool(20) as p:
+    opt_var = p.starmap(sighf,inp)
+
+options = [[] for i in range(len(opts))]
+for i in opt_var:
+    for j in i:
+        options[opts.index(j["opt"])].append(j)
+opt_var = options
+c = ["blue","green","red","purple","brown"]
+count = 0
+fig = plt.figure()
+for i in opt_var:
+    plt.scatter(list(map(itemgetter("mu"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
+    count += 1
+plt.show()
 
 #%%
 
