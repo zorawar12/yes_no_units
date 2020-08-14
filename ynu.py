@@ -89,57 +89,54 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
     
 
 #%%
-# # Without assesment error Majority based decision
-# pc = units(population_size=population_size,number_of_options=number_of_options,\
-#     mu_m=mu_m,sigma_m=sigma_m)
-# tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
-# qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
-#     Dm = pc.Dm,Dh = tc.Dh)
-# dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,\
-#     assigned_units= qc.assigned_units,err_type=err_type,mu_assessment_err= mu_assessment_err,\
-#     sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)                                   
-# if dec == 1:
-#     print("success")
-# else:
-#     print("failed")
-
-
-#%%
-# # With assessment error Majority based decision
-# pc = units(population_size=population_size,number_of_options=number_of_options,\
-#     mu_m=mu_m,sigma_m=sigma_m)
-# tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
-# qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
-#     Dm = pc.Dm,Dh = tc.Dh)
-# dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,\
-#     assigned_units= qc.assigned_units,err_type=err_type,mu_assessment_err= mu_assessment_err,\
-#     sigma_assessment_err=0.1,ref_highest_quality=qc.ref_highest_quality)        
-# if dec == 1:
-#     print("success")
-# else:
-#     print("failed")
-
+# Without assesment error Majority based decision
+pc = units(population_size=population_size,number_of_options=number_of_options,\
+    mu_m=mu_m,sigma_m=sigma_m)
+tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
+qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
+    Dm = pc.Dm,Dh = tc.Dh)
+dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,\
+    assigned_units= qc.assigned_units,err_type=err_type,mu_assessment_err= mu_assessment_err,\
+    sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)                                   
+if dec == 1:
+    print("success")
+else:
+    print("failed")
 
 #%%
-# # Random choice when more than one option's correct Majority based decision
-# pc = units(population_size=population_size,number_of_options=number_of_options,\
-#     mu_m=mu_m,sigma_m=sigma_m)
-# tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
-# qc = quality(number_of_options=number_of_options,x_type=0,mu_x=mu_x,sigma_x=sigma_x,\
-#     Dm = pc.Dm,Dh = tc.Dh)
-# dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,\
-#     assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
-#     sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality,one_correct_opt=0)
-# if dec == 1:
-#     print("success")
-# else:
-#     print("failed")
-
+# With assessment error Majority based decision
+pc = units(population_size=population_size,number_of_options=number_of_options,\
+    mu_m=mu_m,sigma_m=sigma_m)
+tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
+qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
+    Dm = pc.Dm,Dh = tc.Dh)
+dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,\
+    assigned_units= qc.assigned_units,err_type=err_type,mu_assessment_err= mu_assessment_err,\
+    sigma_assessment_err=0.1,ref_highest_quality=qc.ref_highest_quality)        
+if dec == 1:
+    print("success")
+else:
+    print("failed")
 
 #%%
+# Random choice when more than one option's correct Majority based decision
+pc = units(population_size=population_size,number_of_options=number_of_options,\
+    mu_m=mu_m,sigma_m=sigma_m)
+tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
+qc = quality(number_of_options=number_of_options,x_type=0,mu_x=mu_x,sigma_x=sigma_x,\
+    Dm = pc.Dm,Dh = tc.Dh)
+dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,\
+    assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
+    sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality,one_correct_opt=0)
+if dec == 1:
+    print("success")
+else:
+    print("failed")
 
+#%%
+# Majority based decision with varying number of options and sigma_h 
 sig_h = [i/1000.0 for i in range(1001)]
-opts = [i for i in range(2,5,2)]
+opts = [2*i for i in range(2,5,2)]
 
 inp = []
 for i in opts:
@@ -152,49 +149,44 @@ pc = None
 qc = None
 
 def sighf(op,j):
-    global opt_var,population_size,mu_m,sigma_m,h_type,mu_h,mu_x,sigma_x,mu_assessment_err,sigma_assessment_err,check,pc,qc
+    global opt_var, pc,qc,check
     count = 0
-    if check!=op:
-        pc = units(population_size=population_size,number_of_options=op,\
+    pc = units(population_size=population_size,number_of_options=op,\
             mu_m=mu_m,sigma_m=sigma_m)
+
+    for k in range(2000):
         tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=j)
-        qc = quality(number_of_options=op,x_type=0,mu_x=mu_x,sigma_x=sigma_x,\
+        qc = quality(number_of_options=op,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
             Dm = pc.Dm,Dh = tc.Dh)
-    
-    for k in range(1000):
-        if check == op:   
-            tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=j)
-            qc.assign_units_to_opts(pc.Dm,tc.Dh)
         success = majority_decision(number_of_options=op,Dx = qc.Dx,\
             assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
-            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality,one_correct_opt=0)
+            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
         if success == 1:
             count += 1
-    opt_var.append({"opt":op,"sigma": j, "success_rate":count/1000})
+    opt_var.append({"opt":op,"sigma": j, "success_rate":count/2000})
     check = op
     return opt_var
-
 
 with Pool(20) as p:
     opt_var = p.starmap(sighf,inp)
 
-
-#%%
 options = [[] for i in range(len(opts))]
 for i in opt_var:
     for j in i:
         options[opts.index(j["opt"])].append(j)
 opt_var = options
-
-#%%
 c = ["blue","green","red","purple","brown"]
-
 count = 0
 fig = plt.figure()
 for i in opt_var:
     plt.scatter(list(map(itemgetter("sigma"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
     count += 1
 plt.show()
+
+#%%
+
+#%%
+
 
 #%%
 # num_of_units = [j for j in range(100,20000,500)]
