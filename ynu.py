@@ -187,13 +187,13 @@ opts = [2*i for i in range(2,5,2)]
 
 inp = []
 for i in opts:
-    for j in sig_h:
+    for j in m_h:
         inp.append((i,j))
 
 opt_var = []
 pc = None
 
-def sighf(op,j):
+def muhf(op,j):
     global opt_var, pc
     count = 0
     pc = units(population_size=population_size,number_of_options=op,\
@@ -212,7 +212,7 @@ def sighf(op,j):
     return opt_var
 
 with Pool(20) as p:
-    opt_var = p.starmap(sighf,inp)
+    opt_var = p.starmap(muhf,inp)
 
 options = [[] for i in range(len(opts))]
 for i in opt_var:
