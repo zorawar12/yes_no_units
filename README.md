@@ -17,6 +17,7 @@ Clone this repository and run the main programe in order to visualize results.
 2. Matplotlib.pyplot
 3. classynu
 4. operator.itemgetter
+5. multiprocessing.Pool
 
 ### Who do I talk to? ###
 
