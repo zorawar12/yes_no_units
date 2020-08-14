@@ -157,18 +157,21 @@ def sighf(op,j):
     if check!=op:
         pc = units(population_size=population_size,number_of_options=op,\
             mu_m=mu_m,sigma_m=sigma_m)
+        tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=j)
         qc = quality(number_of_options=op,x_type=0,mu_x=mu_x,sigma_x=sigma_x,\
             Dm = pc.Dm,Dh = tc.Dh)
-    check = op
+    
     for k in range(1000):
-        tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=j)
-        qc.assign_units_to_opts(pc.Dm,tc.Dh)
+        if check == op:   
+            tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=j)
+            qc.assign_units_to_opts(pc.Dm,tc.Dh)
         success = majority_decision(number_of_options=op,Dx = qc.Dx,\
             assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality,one_correct_opt=0)
         if success == 1:
             count += 1
     opt_var.append({"opt":op,"sigma": j, "success_rate":count/1000})
+    check = op
     return opt_var
 
 
