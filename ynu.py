@@ -13,6 +13,23 @@ from multiprocessing import Pool
 from operator import itemgetter 
 
 #%%
+population_size = 500
+number_of_options = 10
+mu_x = 0.0
+sigma_x = 1.0
+mu_h = 0.0
+sigma_h = 1.0
+mu_m = 100
+sigma_m = 0
+mu_assessment_err = 0.0
+sigma_assessment_err = 0.0
+x_type = 3
+h_type = 3
+err_type = 0
+one_correct_opt = 1
+
+#%%
+
 
 def majority_decision(population_size = 500,number_of_options = 10,mu_x = 0.0,\
     sigma_x = 1.0,mu_h = 0.0,sigma_h = 1.0,mu_m = 100,sigma_m = 0,mu_assessment_err = 0.0,\
