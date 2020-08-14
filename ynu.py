@@ -147,16 +147,22 @@ for i in opts:
         inp.append((i,j))
 
 opt_var = []
+check = None
+pc = None
+qc = None
 
 def sighf(op,j):
-    global opt_var,population_size,mu_m,sigma_m,h_type,mu_h,mu_x,sigma_x,mu_assessment_err,sigma_assessment_err
+    global opt_var,population_size,mu_m,sigma_m,h_type,mu_h,mu_x,sigma_x,mu_assessment_err,sigma_assessment_err,check,pc,qc
     count = 0
-    pc = units(population_size=population_size,number_of_options=op,\
-        mu_m=mu_m,sigma_m=sigma_m)
-    tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=j)
-    qc = quality(number_of_options=op,x_type=0,mu_x=mu_x,sigma_x=sigma_x,\
-        Dm = pc.Dm,Dh = tc.Dh)
+    if check!=op:
+        pc = units(population_size=population_size,number_of_options=op,\
+            mu_m=mu_m,sigma_m=sigma_m)
+        qc = quality(number_of_options=op,x_type=0,mu_x=mu_x,sigma_x=sigma_x,\
+            Dm = pc.Dm,Dh = tc.Dh)
+    check = op
     for k in range(1000):
+        tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=j)
+        qc.assign_units_to_opts(pc.Dm,tc.Dh)
         success = majority_decision(number_of_options=op,Dx = qc.Dx,\
             assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality,one_correct_opt=0)
