@@ -16,8 +16,8 @@ class Decision_making:
         self.err_type = err_type
         self.number_of_options = number_of_options
         self.quorum = None
-        self.mu_assessment_err = None
-        self.sigma_assessment_err = None
+        self.mu_assessment_err = mu_assessment_err
+        self.sigma_assessment_err = sigma_assessment_err
         self.votes = None
         self.vote_for_opt = None
 
@@ -80,7 +80,7 @@ class populationControl:
         while sum > self.population_size:
             Dm = np.round(np.random.normal(self.mu_m,self.sigma_m,self.number_of_options),decimals=0)
             sum = np.sum(Dm)
-        self.Dm = Dm
+        self.Dm = Dm.astype("int32")
 
 
 #%%
