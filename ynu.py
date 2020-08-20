@@ -13,13 +13,13 @@ from multiprocessing import Pool
 from operator import itemgetter 
 
 #%%
-population_size = 2000
+population_size = 1000
 number_of_options = 10
 mu_x = 0.0
 sigma_x = 1.0
-mu_h = 0.0
+mu_h = -1.6
 sigma_h = 1.0
-mu_m = 200
+mu_m = 100
 sigma_m = 0
 mu_assessment_err = 0.0
 sigma_assessment_err = 0.0
@@ -135,8 +135,8 @@ else:
 
 #%%
 # Majority based decision with varying number of options and sigma_h 
-sig_h = [i/1000.0 for i in range(1001)]
-opts = [2*i for i in range(2,5,2)]
+sig_h = [0.0+i*0.01 for i in range(101)]
+opts = [2,10]#2*i for i in range(2,6,3)]
 
 inp = []
 for i in opts:
@@ -152,7 +152,7 @@ def sighf(op,j):
     pc = units(population_size=population_size,number_of_options=op,\
             mu_m=mu_m,sigma_m=sigma_m)
 
-    for k in range(2000):
+    for k in range(10000):
         tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=j)
         qc = quality(number_of_options=op,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
             Dm = pc.Dm,Dh = tc.Dh)
@@ -161,7 +161,7 @@ def sighf(op,j):
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
         if success == 1:
             count += 1
-    opt_var.append({"opt":op,"sigma": j, "success_rate":count/2000})
+    opt_var.append({"opt":op,"sigma": j, "success_rate":count/10000})
     return opt_var
 
 with Pool(20) as p:
@@ -182,8 +182,8 @@ plt.show()
 
 #%%
 # Majority based decision with varying number of options and mu_h 
-m_h = [i/100.0 for i in range(-400,400,1)]
-opts = [2*i for i in range(2,5,2)]
+m_h = [-4.0+i*0.08 for i in range(101)]
+opts = [2,10]#2*i for i in range(2,6,3)]
 
 inp = []
 for i in opts:
