@@ -122,7 +122,7 @@ class qualityControl:
         """
         Provides distribution of quality stimulus for each option upto specified decimal places
         """        
-        self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
+        self.Dx = np.sort(np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type))
 
     def assign_units_to_opts(self,Dm,Dh):
         """

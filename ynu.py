@@ -17,7 +17,7 @@ population_size = 1000
 number_of_options = 10
 mu_x = 0.0
 sigma_x = 1.0
-mu_h = -1.6
+mu_h = 0
 sigma_h = 1.0
 mu_m = 100
 sigma_m = 0
@@ -172,12 +172,16 @@ for i in opt_var:
     for j in i:
         options[opts.index(j["opt"])].append(j)
 opt_var = options
+#%%
 c = ["blue","green","red","purple","brown"]
 count = 0
 fig = plt.figure()
 for i in opt_var:
     plt.scatter(list(map(itemgetter("sigma"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
     count += 1
+plt.xlabel('Sigma_h')
+plt.ylabel('Rate_of_correct_choice')
+plt.legend(opts,markerscale = 10, title = "Number of options")
 plt.show()
 
 #%%
@@ -219,12 +223,16 @@ for i in opt_var:
     for j in i:
         options[opts.index(j["opt"])].append(j)
 opt_var = options
+#%%
 c = ["blue","green","red","purple","brown"]
 count = 0
 fig = plt.figure()
 for i in opt_var:
     plt.scatter(list(map(itemgetter("mu"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
     count += 1
+plt.xlabel('Mu_h')
+plt.ylabel('Rate_of_correct_choice')
+plt.legend(opts,markerscale = 10, title = "Number of options")
 plt.show()
 
 #%%
