@@ -13,7 +13,7 @@ from multiprocessing import Pool
 from operator import itemgetter 
 
 #%%
-population_size = 1000
+population_size = 5000
 number_of_options = 10
 mu_x = 0.0
 sigma_x = 1.0
@@ -203,7 +203,7 @@ def muhf(op,j):
     pc = units(population_size=population_size,number_of_options=op,\
             mu_m=mu_m,sigma_m=sigma_m)
 
-    for k in range(2000):
+    for k in range(5000):
         tc = threshold(population_size=population_size,h_type=h_type,mu_h=j,sigma_h=sigma_h)
         qc = quality(number_of_options=op,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
             Dm = pc.Dm,Dh = tc.Dh)
@@ -212,7 +212,7 @@ def muhf(op,j):
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
         if success == 1:
             count += 1
-    opt_var.append({"opt":op,"mu": j, "success_rate":count/2000})
+    opt_var.append({"opt":op,"mu": j, "success_rate":count/5000})
     return opt_var
 
 with Pool(20) as p:
@@ -236,16 +236,54 @@ plt.legend(opts,markerscale = 10, title = "Number of options")
 plt.show()
 
 #%%
+# Majority based decision with varying number of options and mu_h 
+number_of_options = [i for i in range(1,51,1)]
+mu_h = [0,2]
 
+inp = []
+for i in mu_h:
+    for j in number_of_options:
+        inp.append((i,j))
 
+mu_h_var = []
+pc = None
+
+def nf(muh,nop):
+    global mu_h_var, pc
+    count = 0
+    pc = units(population_size=population_size,number_of_options=nop,mu_m=mu_m,sigma_m=sigma_m)
+    for k in range(2000):
+        tc = threshold(population_size=population_size,h_type=h_type,mu_h=muh,sigma_h=sigma_h)
+        qc = quality(number_of_options=nop,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,Dm = pc.Dm,Dh = tc.Dh)
+        success = majority_decision(number_of_options=nop,Dx = qc.Dx,\
+            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
+            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
+        if success == 1:
+            count += 1
+    mu_h_var.append({"nop":nop,"muh": muh, "success_rate":count/2000})
+    print(len(mu_h_var)/len(inp))
+    return mu_h_var
+
+with Pool(20) as p:
+    mu_h_var = p.starmap(nf,inp)
+
+mean_h = [[] for i in range(len(mu_h))]
+for i in mu_h_var:
+    for j in i:
+        mean_h[mu_h.index(j["muh"])].append(j)
+mu_h_var = mean_h
 #%%
-# num_of_units = [j for j in range(100,20000,500)]
-# num_of_opt = [j for j in range(2,20,1)]
+c = ["blue","green","red","purple","brown"]
+count = 0
+fig = plt.figure()
+for i in mu_h_var:
+    plt.scatter(list(map(itemgetter("nop"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
+    count += 1
+plt.xlabel('number_of_options')
+plt.ylabel('Rate_of_correct_choice')
+plt.legend(mu_h,markerscale = 10, title = "mu_h")
+plt.show()
 
-
-# for j in num_of_units:
-#     for i in num_of_opt:
-#         ynu = yn.Decision_making(j,i)
 
 
 # %%
