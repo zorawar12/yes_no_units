@@ -437,5 +437,6 @@ plt.xlabel('number_of_units(variance = 0)')
 plt.ylabel('Rate_of_correct_choice')
 plt.legend(number_of_options,markerscale = 10, title = "Number_of_options")
 plt.show()
+plt.savefig('sigma_m_vs_rate_of_correct_choice.pdf')
 
 # %%
