@@ -390,7 +390,7 @@ plt.show()
 
 #%%
 # Majority based decision with varying number of options and mu_h 
-sigma_m = [i/100 for i in range(0,3000,1)]
+sigma_m = [1+i*0.03 for i in range(0,1000,1)]
 number_of_options = [2,10]
 
 inp = []
@@ -404,8 +404,8 @@ pc = None
 def sigmf(nop,sigm):
     global nop_var, pc
     count = 0
-    pc = units(population_size=population_size,number_of_options=nop,mu_m=mu_m,sigma_m=sigm)
-    for k in range(3000):
+    for k in range(10000):
+        pc = units(population_size=population_size,number_of_options=nop,mu_m=mu_m,sigma_m=sigm)
         tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
         qc = quality(number_of_options=nop,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,Dm = pc.Dm,Dh = tc.Dh)
         success = majority_decision(number_of_options=nop,Dx = qc.Dx,\
@@ -413,7 +413,7 @@ def sigmf(nop,sigm):
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
         if success == 1:
             count += 1
-    nop_var.append({"nop":nop,"sigm": sigm, "success_rate":count/3000})
+    nop_var.append({"nop":nop,"sigm": sigm, "success_rate":count/10000})
     return nop_var
 
 with Pool(20) as p:
