@@ -443,8 +443,8 @@ plt.savefig('sigma_m_vs_rate_of_correct_choice.pdf')
 
 #%%
 # Majority based decision with varying number of options and sigma_h 
-sig_h = [np.round(0.0+i*0.01,decimals=1) for i in range(101)]
-mu_h = [-4.0+i*0.08 for i in range(101)]
+sig_h = [np.round(0.0+i*0.01,decimals=2) for i in range(101)]
+mu_h = [np.round(-4.0+i*0.08,decimals=2) for i in range(101)]
 opts = 10
 
 inp = []
@@ -470,7 +470,7 @@ def sighf(mu,sig):
         if success == 1:
             count += 1
     mu_va = {"mu":mu,"sigma": sig, "success_rate":count/10000}
-    print("\r{}%".format(100*len(mu_var)/len(inp)),end = "")
+    print("\r{}%".format(mu),end = "")
     return mu_va
 
 
