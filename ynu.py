@@ -440,3 +440,50 @@ plt.show()
 plt.savefig('sigma_m_vs_rate_of_correct_choice.pdf')
 
 # %%
+
+#%%
+# Majority based decision with varying number of options and sigma_h 
+sig_h = [np.round(0.0+i*0.01,decimals=1) for i in range(101)]
+mu_h = [-4.0+i*0.08 for i in range(101)]
+opts = 10
+
+inp = []
+for i in mu_h:
+    for j in sig_h:
+        inp.append((i,j))
+
+mu_var = []
+pc = None
+
+def sighf(mu,sig):
+    global pc
+    count = 0
+    pc = units(population_size=population_size,number_of_options=opts,\
+            mu_m=mu_m,sigma_m=sigma_m)
+    for k in range(10000):
+        tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu,sigma_h=sig)
+        qc = quality(number_of_options=opts,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
+            Dm = pc.Dm,Dh = tc.Dh)
+        success = majority_decision(number_of_options=opts,Dx = qc.Dx,\
+            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
+            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
+        if success == 1:
+            count += 1
+    mu_va = {"mu":mu,"sigma": sig, "success_rate":count/10000}
+    print("\r{}%".format(100*len(mu_var)/len(inp)),end = "")
+    return mu_va
+
+
+with Pool(8) as p:
+    mu_var = p.starmap(sighf,inp)
+
+#%%
+
+fig, ax = plt.subplots()
+z = np.array(list(map(itemgetter("success_rate"), mu_var))).reshape(len(mu_h),len(sig_h))
+cs = ax.contourf(mu_h,sig_h,z)    
+cbar = fig.colorbar(cs)
+plt.xlabel('Sigma_h')
+plt.ylabel('Mu_h')
+plt.savefig("mu_h_vs_sigma_h",format = "pdf")
+# %%
