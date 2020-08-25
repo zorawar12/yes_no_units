@@ -485,5 +485,6 @@ cs = ax.contourf(mu_h,sig_h,z)
 cbar = fig.colorbar(cs)
 plt.xlabel('Sigma_h')
 plt.ylabel('Mu_h')
+plt.legend(title = "Number_of_options = 10")
 plt.savefig("mu_h_vs_sigma_h",format = "pdf")
 # %%
