@@ -428,3 +428,90 @@ plt.legend(title = "Number_of_options = 10")
 plt.savefig("mu_h_vs_sigma_h.pdf",format = "pdf")
 plt.show()
 # %%
+# Majority based decision with varying number of options and sigma_h 
+mu_x = [np.round(-4.0+i*0.08,decimals=2) for i in range(101)]
+mu_h = [np.round(-4.0+i*0.08,decimals=2) for i in range(101)]
+opts = 10
+
+inp = []
+for i in mu_h:
+    for j in mu_x:
+        inp.append((i,j))
+
+mu_var = []
+pc = None
+
+def sighf(muh,mux):
+    global pc
+    count = 0
+    pc = units(population_size=population_size,number_of_options=opts,\
+            mu_m=mu_m,sigma_m=sigma_m)
+    for k in range(2000):
+        tc = threshold(population_size=population_size,h_type=h_type,mu_h=muh,sigma_h=sigma_h)
+        qc = quality(number_of_options=opts,x_type=x_type,mu_x=mux,sigma_x=sigma_x,\
+            Dm = pc.Dm,Dh = tc.Dh)
+        success = majority_decision(number_of_options=opts,Dx = qc.Dx,\
+            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
+            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
+        if success == 1:
+            count += 1
+    mu_va = {"mux":mux,"muh": muh, "success_rate":count/2000}
+    return mu_va
+
+with Pool(8) as p:
+    mu_var = p.starmap(sighf,inp)
+
+fig, ax = plt.subplots()
+z = np.array(list(map(itemgetter("success_rate"), mu_var))).reshape(len(mu_h),len(mu_x))
+cs = ax.contourf(mu_x,mu_h,z)
+cbar = fig.colorbar(cs)
+plt.xlabel('Mu_x')
+plt.ylabel('Mu_h')
+plt.legend(title = "Number_of_options = 10")
+plt.savefig("mu_h_vs_mu_x.pdf",format = "pdf")
+plt.show()
+
+#%%
+# %%
+# Majority based decision with varying number of options and sigma_h 
+sig_x = [np.round(i*0.04,decimals=2) for i in range(101)]
+sig_h = [np.round(i*0.04,decimals=2) for i in range(101)]
+opts = 10
+
+inp = []
+for i in sig_h:
+    for j in sig_x:
+        inp.append((i,j))
+
+sig_var = []
+pc = None
+
+def sighf(sigh,sigx):
+    global pc
+    count = 0
+    pc = units(population_size=population_size,number_of_options=opts,\
+            mu_m=mu_m,sigma_m=sigma_m)
+    for k in range(2000):
+        tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigh)
+        qc = quality(number_of_options=opts,x_type=x_type,mu_x=mu_x,sigma_x=sigx,\
+            Dm = pc.Dm,Dh = tc.Dh)
+        success = majority_decision(number_of_options=opts,Dx = qc.Dx,\
+            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
+            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
+        if success == 1:
+            count += 1
+    sig_va = {"sigx":sigx,"sigh": sigh, "success_rate":count/2000}
+    return sig_va
+
+with Pool(8) as p:
+    sig_var = p.starmap(sighf,inp)
+
+fig, ax = plt.subplots()
+z = np.array(list(map(itemgetter("success_rate"), sig_var))).reshape(len(sig_h),len(sig_x))
+cs = ax.contourf(sig_x,sig_h,z)
+cbar = fig.colorbar(cs)
+plt.xlabel('Sigma_x')
+plt.ylabel('Sigma_h')
+plt.legend(title = "Number_of_options = 10")
+plt.savefig("sig_h_vs_sig_x.pdf",format = "pdf")
+plt.show()
