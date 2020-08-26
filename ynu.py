@@ -147,12 +147,12 @@ opt_var = []
 pc = None
 
 def sighf(op,j):
-    global opt_var, pc
+    global pc
     count = 0
     pc = units(population_size=population_size,number_of_options=op,\
             mu_m=mu_m,sigma_m=sigma_m)
 
-    for k in range(10000):
+    for k in range(2000):
         tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=j)
         qc = quality(number_of_options=op,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
             Dm = pc.Dm,Dh = tc.Dh)
@@ -161,27 +161,28 @@ def sighf(op,j):
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
         if success == 1:
             count += 1
-    opt_var.append({"opt":op,"sigma": j, "success_rate":count/10000})
-    return opt_var
+    opt_va = {"opt":op,"sigma": j, "success_rate":count/2000}
+    return opt_va
 
-with Pool(20) as p:
+with Pool(8) as p:
     opt_var = p.starmap(sighf,inp)
 
-options = [[] for i in range(len(opts))]
-for i in opt_var:
-    for j in i:
-        options[opts.index(j["opt"])].append(j)
-opt_var = options
-#%%
 c = ["blue","green","red","purple","brown"]
 count = 0
 fig = plt.figure()
+data = [[] for i in range(len(opts))]
+
 for i in opt_var:
+    data[opts.index(i["opt"])].append(i)
+
+for i in data:
     plt.scatter(list(map(itemgetter("sigma"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
     count += 1
+
 plt.xlabel('Sigma_h')
 plt.ylabel('Rate_of_correct_choice')
 plt.legend(opts,markerscale = 10, title = "Number of options")
+plt.savefig("Sigma_h_vs_Rate_of_correct_choice.pdf",format = "pdf")
 plt.show()
 
 #%%
@@ -198,12 +199,12 @@ opt_var = []
 pc = None
 
 def muhf(op,j):
-    global opt_var, pc
+    global pc
     count = 0
     pc = units(population_size=population_size,number_of_options=op,\
             mu_m=mu_m,sigma_m=sigma_m)
 
-    for k in range(5000):
+    for k in range(2000):
         tc = threshold(population_size=population_size,h_type=h_type,mu_h=j,sigma_h=sigma_h)
         qc = quality(number_of_options=op,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
             Dm = pc.Dm,Dh = tc.Dh)
@@ -212,27 +213,28 @@ def muhf(op,j):
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
         if success == 1:
             count += 1
-    opt_var.append({"opt":op,"mu": j, "success_rate":count/5000})
-    return opt_var
+    opt_va = {"opt":op,"mu": j, "success_rate":count/2000}
+    return opt_va
 
-with Pool(20) as p:
+with Pool(8) as p:
     opt_var = p.starmap(muhf,inp)
 
-options = [[] for i in range(len(opts))]
-for i in opt_var:
-    for j in i:
-        options[opts.index(j["opt"])].append(j)
-opt_var = options
-#%%
 c = ["blue","green","red","purple","brown"]
 count = 0
 fig = plt.figure()
+data = [[] for i in range(len(opts))]
+
 for i in opt_var:
-    plt.scatter(list(map(itemgetter("mu"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
+    data[opts.index(i["opt"])].append(i)
+
+for i in data:
+    plt.scatter(list(map(itemgetter("mu"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)
     count += 1
+
 plt.xlabel('Mu_h')
 plt.ylabel('Rate_of_correct_choice')
 plt.legend(opts,markerscale = 10, title = "Number of options")
+plt.savefig("Mu_h_vs_Rate_of_correct_choice.pdf",format = "pdf")
 plt.show()
 
 #%%
@@ -249,7 +251,7 @@ mu_h_var = []
 pc = None
 
 def nf(muh,nop):
-    global mu_h_var, pc
+    global pc
     count = 0
     pc = units(population_size=population_size,number_of_options=nop,mu_m=mu_m,sigma_m=sigma_m)
     for k in range(3000):
@@ -260,81 +262,28 @@ def nf(muh,nop):
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
         if success == 1:
             count += 1
-    mu_h_var.append({"nop":nop,"muh": muh, "success_rate":count/3000})
-    return mu_h_var
+    mu_h_va = {"nop":nop,"muh": muh, "success_rate":count/3000}
+    return mu_h_va
 
-with Pool(20) as p:
+with Pool(8) as p:
     mu_h_var = p.starmap(nf,inp)
 
-
-mean_h = [[] for i in range(len(mu_h))]
-for i in mu_h_var:
-    for j in i:
-        mean_h[mu_h.index(j["muh"])].append(j)
-mu_h_var = mean_h
-#%%
 c = ["blue","green","red","purple","brown"]
 count = 0
 fig = plt.figure()
+data = [[] for i in range(len(mu_h))]
+
 for i in mu_h_var:
-    plt.scatter(list(map(itemgetter("nop"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
+    data[mu_h.index(i["muh"])].append(i)
+
+for i in data:
+    plt.scatter(list(map(itemgetter("nop"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)
     count += 1
+
 plt.xlabel('number_of_options')
 plt.ylabel('Rate_of_correct_choice')
 plt.legend(mu_h,markerscale = 10, title = "mu_h")
-plt.show()
-
-
-
-#%%
-# Majority based decision with varying number of options and mu_h 
-m_h = [-4.0+i*0.08 for i in range(101)]
-opts = [2,10]#2*i for i in range(2,6,3)]
-
-inp = []
-for i in opts:
-    for j in m_h:
-        inp.append((i,j))
-
-opt_var = []
-pc = None
-
-def muhf(op,j):
-    global opt_var, pc
-    count = 0
-    pc = units(population_size=population_size,number_of_options=op,\
-            mu_m=mu_m,sigma_m=sigma_m)
-
-    for k in range(5000):
-        tc = threshold(population_size=population_size,h_type=h_type,mu_h=j,sigma_h=sigma_h)
-        qc = quality(number_of_options=op,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
-            Dm = pc.Dm,Dh = tc.Dh)
-        success = majority_decision(number_of_options=op,Dx = qc.Dx,\
-            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
-            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
-        if success == 1:
-            count += 1
-    opt_var.append({"opt":op,"mu": j, "success_rate":count/5000})
-    return opt_var
-
-with Pool(20) as p:
-    opt_var = p.starmap(muhf,inp)
-
-options = [[] for i in range(len(opts))]
-for i in opt_var:
-    for j in i:
-        options[opts.index(j["opt"])].append(j)
-opt_var = options
-#%%
-c = ["blue","green","red","purple","brown"]
-count = 0
-fig = plt.figure()
-for i in opt_var:
-    plt.scatter(list(map(itemgetter("mu"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
-    count += 1
-plt.xlabel('Mu_h')
-plt.ylabel('Rate_of_correct_choice')
-plt.legend(opts,markerscale = 10, title = "Number of options")
+plt.savefig("number_of_options_vs_Rate_of_correct_choice.pdf",format = "pdf")
 plt.show()
 
 #%%
@@ -351,7 +300,7 @@ nop_var = []
 pc = None
 
 def mumf(nop,mum):
-    global nop_var, pc
+    global pc
     count = 0
     pc = units(population_size=population_size,number_of_options=nop,mu_m=mum,sigma_m=sigma_m)
     for k in range(3000):
@@ -362,31 +311,29 @@ def mumf(nop,mum):
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
         if success == 1:
             count += 1
-    nop_var.append({"nop":nop,"mum": mum, "success_rate":count/3000})
-    return nop_var
+    nop_va = {"nop":nop,"mum": mum, "success_rate":count/3000}
+    return nop_va
 
-with Pool(20) as p:
+with Pool(8) as p:
     nop_var = p.starmap(mumf,inp)
-#%%
-
-mean_m = [[] for i in range(len(number_of_options))]
-for i in nop_var:
-    for j in i:
-        mean_m[number_of_options.index(j["nop"])].append(j)
-nop_var = mean_m
-#%%
 
 c = ["blue","green","red","purple","brown"]
 count = 0
 fig = plt.figure()
+data = [[] for i in range(len(number_of_options))]
+
 for i in nop_var:
+    data[number_of_options.index(i["nop"])].append(i)
+
+for i in data:
     plt.scatter(list(map(itemgetter("mum"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
     count += 1
+
 plt.xlabel('number_of_units(variance = 0)')
 plt.ylabel('Rate_of_correct_choice')
 plt.legend(number_of_options,markerscale = 10, title = "Number_of_options")
+plt.savefig("number_of_units_vs_Rate_of_correct_choice.pdf",format = "pdf")
 plt.show()
-
 
 #%%
 # Majority based decision with varying number of options and mu_h 
@@ -402,7 +349,7 @@ nop_var = []
 pc = None
 
 def sigmf(nop,sigm):
-    global nop_var, pc
+    global pc
     count = 0
     for k in range(10000):
         pc = units(population_size=population_size,number_of_options=nop,mu_m=mu_m,sigma_m=sigm)
@@ -413,33 +360,29 @@ def sigmf(nop,sigm):
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
         if success == 1:
             count += 1
-    nop_var.append({"nop":nop,"sigm": sigm, "success_rate":count/10000})
-    return nop_var
+    nop_va = {"nop":nop,"sigm": sigm, "success_rate":count/10000}
+    return nop_va
 
-with Pool(20) as p:
+with Pool(8) as p:
     nop_var = p.starmap(sigmf,inp)
-#%%
-
-mean_m = [[] for i in range(len(number_of_options))]
-for i in nop_var:
-    for j in i:
-        mean_m[number_of_options.index(j["nop"])].append(j)
-nop_var = mean_m
-#%%
 
 c = ["blue","green","red","purple","brown"]
 count = 0
 fig = plt.figure()
+data = [[] for i in range(len(number_of_options))]
+
 for i in nop_var:
+    data[number_of_options.index(i["nop"])].append(i)
+
+for i in data:
     plt.scatter(list(map(itemgetter("sigm"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
     count += 1
+
 plt.xlabel('number_of_units(variance = 0)')
 plt.ylabel('Rate_of_correct_choice')
 plt.legend(number_of_options,markerscale = 10, title = "Number_of_options")
-plt.show()
 plt.savefig('sigma_m_vs_rate_of_correct_choice.pdf')
-
-# %%
+plt.show()
 
 #%%
 # Majority based decision with varying number of options and sigma_h 
@@ -460,7 +403,7 @@ def sighf(mu,sig):
     count = 0
     pc = units(population_size=population_size,number_of_options=opts,\
             mu_m=mu_m,sigma_m=sigma_m)
-    for k in range(10000):
+    for k in range(2000):
         tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu,sigma_h=sig)
         qc = quality(number_of_options=opts,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
             Dm = pc.Dm,Dh = tc.Dh)
@@ -469,22 +412,19 @@ def sighf(mu,sig):
             sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
         if success == 1:
             count += 1
-    mu_va = {"mu":mu,"sigma": sig, "success_rate":count/10000}
-    print("\r{}%".format(mu),end = "")
+    mu_va = {"mu":mu,"sigma": sig, "success_rate":count/2000}
     return mu_va
-
 
 with Pool(8) as p:
     mu_var = p.starmap(sighf,inp)
 
-#%%
-
 fig, ax = plt.subplots()
 z = np.array(list(map(itemgetter("success_rate"), mu_var))).reshape(len(mu_h),len(sig_h))
-cs = ax.contourf(mu_h,sig_h,z)    
+cs = ax.contourf(sig_h,mu_h,z)   
 cbar = fig.colorbar(cs)
 plt.xlabel('Sigma_h')
 plt.ylabel('Mu_h')
 plt.legend(title = "Number_of_options = 10")
-plt.savefig("mu_h_vs_sigma_h",format = "pdf")
+plt.savefig("mu_h_vs_sigma_h.pdf",format = "pdf")
+plt.show()
 # %%
