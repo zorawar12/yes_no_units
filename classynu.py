@@ -24,14 +24,18 @@ class Decision_making:
         """
         Each unit provides its decision and votes are counted for each options 
         """
-        votes = []
-        for i in range(len(assigned_units)):
+        votes = [0 for i in range(self.number_of_options)]
+
+        for i in range(self.number_of_options):
             count = 0
             assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
             for j in range(len(assigned_units[i])):
                 if (assigned_units[i][j] < (Dx[i] + assesment_error[j])):
-                    count += 1
-            votes.append(count)
+                    votes[i] += 1
+                    if self.quorum != None :    
+                        for s in range(len(votes)):    
+                            if  votes[s] >= self.quorum:
+                                return s
         self.votes = votes
 
     def one_correct(self,ref_highest_quality):
@@ -49,23 +53,6 @@ class Decision_making:
         opt_choosen = np.random.randint(0,len(available_opt))
         if available_opt[opt_choosen] ==  ref_highest_quality:
             return 1
-
-    # def quorum_decision(self,assigned_units,Dx):
-    #     """
-    #     Each unit provides its decision and votes are counted for each options 
-    #     """
-    #     votes = []
-    #     for i in range(len(assigned_units)):
-    #         count = 0
-    #         assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
-    #         for j in range(len(assigned_units[i])):
-    #             if assigned_units[i][j]["threshold"]  < Dx[i] + assesment_error[j] :
-    #                 count += 1
-    #         votes.append(count)
-    #         for i in range(self.number_of_options):
-    #             if votes[i]>=self.quorum:
-    #                 return i
-
 
 #%%
 
@@ -90,5 +77,4 @@ class qualityControl:
         """        
         self.Dx = np.sort(np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type))
         # self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
-
 

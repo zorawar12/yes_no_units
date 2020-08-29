@@ -13,7 +13,7 @@ from multiprocessing import Pool
 from operator import itemgetter 
 
 #%%
-number_of_options = 20
+number_of_options = 10
 mu_x = 0.0
 sigma_x = 1.0
 mu_h = 0
@@ -49,7 +49,7 @@ def threshold(m_units,h_type,mu_h,sigma_h):
     Returns: 
     Array[1xm_units] of thesholds for each assigned set of units to options
     """
-    return np.round(np.random.normal(mu_h,sigma_h,m_units),decimals=h_type)
+    return np.round(np.random.normal(mu_h,sigma_h,abs(m_units)),decimals=h_type)
 
 def quality(number_of_options,x_type,mu_x,sigma_x):
     """
@@ -71,7 +71,7 @@ def quality(number_of_options,x_type,mu_x,sigma_x):
 
 def majority_decision(number_of_options,Dx,assigned_units,err_type,\
     mu_assessment_err,sigma_assessment_err,ref_highest_quality,\
-        one_correct_opt = 1):
+        one_correct_opt = 1,quorum = None):
     """
     Majority based decision
 
@@ -90,24 +90,35 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
     """
     DM = yn.Decision_making(number_of_options=number_of_options,err_type=err_type,\
     mu_assessment_err=mu_assessment_err,sigma_assessment_err=sigma_assessment_err)
+    DM.quorum = quorum
+    if quorum == None:
+        DM.vote_counter(assigned_units,Dx)
 
-    DM.vote_counter(assigned_units,Dx)
+        # plt.scatter(Dx,DM.votes)
+        # plt.show()
 
-    # plt.scatter(Dx,DM.votes)
-    # plt.show()
-
-    if one_correct_opt == 1:
-        if DM.one_correct(ref_highest_quality) == 1:
-            return 1
+        if one_correct_opt == 1:
+            if DM.one_correct(ref_highest_quality) == 1:
+                return 1
+            else:
+                return 0
+            
         else:
-            return 0
-        
+            if DM.multi_correct(ref_highest_quality) == 1:
+                return 1
+            else:
+                return 0
     else:
-        if DM.multi_correct(ref_highest_quality) == 1:
+        best = DM.vote_counter(assigned_units,Dx)
+
+        # plt.scatter(Dx,DM.votes)
+        # plt.show()
+
+        if best == ref_highest_quality:
             return 1
         else:
             return 0
-    
+
 def one_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h,\
     x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err):
 
@@ -129,7 +140,8 @@ def one_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type
         print("failed")
 
 def multi_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h,\
-    x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err):
+    x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,err_type=err_type,mu_assessment_err= mu_assessment_err,\
+    sigma_assessment_err=sigma_assessment_err,quorum= None):
 
     pc = np.array(units(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m)).astype(int)
 
@@ -141,7 +153,7 @@ def multi_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_ty
 
     dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,assigned_units= units_distribution,\
         err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,\
-        ref_highest_quality=qc.ref_highest_quality)                                   
+        ref_highest_quality=qc.ref_highest_quality,quorum=quorum)                                   
 
     return dec
 
@@ -176,6 +188,17 @@ def parallel(func,a,b):
         opt_var = p.starmap(func,inp)
     
     return opt_var
+
+def graphic_plt(a,b,array,x_name,y_name,title,save_name):
+    fig, ax = plt.subplots()
+    z = np.array(list(map(itemgetter("success_rate"), array))).reshape(len(a),len(b))
+    cs = ax.contourf(b,a,z)   
+    cbar = fig.colorbar(cs)
+    plt.xlabel(x_name)
+    plt.ylabel(y_name)
+    plt.legend(title = title)
+    plt.savefig(save_name,format = "pdf")
+    plt.show()
 
 #%%
 # Without assesment error Majority based decision
@@ -238,7 +261,7 @@ def nf(muh,nop):
         success = multi_run(mu_h=muh,number_of_options=nop,err_type=0) 
         if success == 1:
             count += 1
-    mu_h_va = {"nop":nop,"muh": muh, "success_rate":count/3000}
+    mu_h_va = {"nop":nop,"muh": muh, "success_rate":count/2000}
     return mu_h_va
 
 opt_var = parallel(nf,mu_h,number_of_options)
@@ -270,221 +293,100 @@ plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="mum",x_
 sigma_m = [1+i*0.03 for i in range(0,1000,1)]
 number_of_options = [2,10]
 
-inp = []
-for i in number_of_options:
-    for j in sigma_m:
-        inp.append((i,j))
-
-nop_var = []
-pc = None
-
 def sigmf(nop,sigm):
-    global pc
     count = 0
-    for k in range(10000):
-        pc = units(population_size=population_size,number_of_options=nop,mu_m=mu_m,sigma_m=sigm)
-        tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
-        qc = quality(number_of_options=nop,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,Dm = pc.Dm,Dh = tc.Dh)
-        success = majority_decision(number_of_options=nop,Dx = qc.Dx,\
-            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
-            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
+    for k in range(2000):
+        success = multi_run(sigma_m=sigm,number_of_options=nop,err_type=0) 
         if success == 1:
             count += 1
-    nop_va = {"nop":nop,"sigm": sigm, "success_rate":count/10000}
-    return nop_va
+    nop_va = {"nop":nop,"sigm": sigm, "success_rate":count/2000}
+    return nop_vas
 
-with Pool(8) as p:
-    nop_var = p.starmap(sigmf,inp)
+opt_var = parallel(sigmf,number_of_options,sigma_m)
 
-c = ["blue","green","red","purple","brown"]
-count = 0
-fig = plt.figure()
-data = [[] for i in range(len(number_of_options))]
-
-for i in nop_var:
-    data[number_of_options.index(i["nop"])].append(i)
-
-for i in data:
-    plt.scatter(list(map(itemgetter("sigm"), i)),list(map(itemgetter("success_rate"), i)),c = c[count],s=0.3)    
-    count += 1
-
-plt.xlabel('number_of_units(variance = 0)')
-plt.ylabel('Rate_of_correct_choice')
-plt.legend(number_of_options,markerscale = 10, title = "Number_of_options")
-plt.savefig('sigma_m_vs_rate_of_correct_choice.pdf')
-plt.show()
+plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="sigm",x_name='number_of_units',\
+    title="Number_of_options",save_name="sigma_m_vs_rate_of_correct_choice.pdf")
 
 #%%
 # Majority based Rate of correct choice as a function of sigma_h for varying mu_h
 sig_h = [np.round(0.0+i*0.01,decimals=2) for i in range(101)]
 mu_h = [np.round(-4.0+i*0.08,decimals=2) for i in range(101)]
-opts = 10
-
-inp = []
-for i in mu_h:
-    for j in sig_h:
-        inp.append((i,j))
-
-mu_var = []
-pc = None
 
 def sighf(mu,sig):
-    global pc
     count = 0
-    pc = units(population_size=population_size,number_of_options=opts,\
-            mu_m=mu_m,sigma_m=sigma_m)
-    for k in range(2000):
-        tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu,sigma_h=sig)
-        qc = quality(number_of_options=opts,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
-            Dm = pc.Dm,Dh = tc.Dh)
-        success = majority_decision(number_of_options=opts,Dx = qc.Dx,\
-            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
-            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
+    for k in range(3000):
+        success = multi_run(mu_h=mu,sigma_h=sig,err_type=0) 
         if success == 1:
             count += 1
-    mu_va = {"mu":mu,"sigma": sig, "success_rate":count/2000}
+    mu_va = {"mu":mu,"sigma": sig, "success_rate":count/3000}
     return mu_va
 
-with Pool(8) as p:
-    mu_var = p.starmap(sighf,inp)
+opt_var = parallel(sighf,mu_h,sig_h)
 
-fig, ax = plt.subplots()
-z = np.array(list(map(itemgetter("success_rate"), mu_var))).reshape(len(mu_h),len(sig_h))
-cs = ax.contourf(sig_h,mu_h,z)   
-cbar = fig.colorbar(cs)
-plt.xlabel('Sigma_h')
-plt.ylabel('Mu_h')
-plt.legend(title = "Number_of_options = 10")
-plt.savefig("mu_h_vs_sigma_h.pdf",format = "pdf")
-plt.show()
+graphic_plt(a= mu_h,b=sig_h ,array= opt_var,x_name='Sigma_h',y_name="Mu_h",title="Number_of_options = 10",\
+    save_name="mu_h_vs_sigma_h.pdf")
+
 # %%
 # Majority based Rate of correct choice as a function of mu_x for varying mu_h
 mu_x = [np.round(-4.0+i*0.08,decimals=2) for i in range(101)]
 mu_h = [np.round(-4.0+i*0.08,decimals=2) for i in range(101)]
-opts = 10
-
-inp = []
-for i in mu_h:
-    for j in mu_x:
-        inp.append((i,j))
-
-mu_var = []
-pc = None
 
 def sighf(muh,mux):
-    global pc
     count = 0
-    pc = units(population_size=population_size,number_of_options=opts,\
-            mu_m=mu_m,sigma_m=sigma_m)
-    for k in range(2000):
-        tc = threshold(population_size=population_size,h_type=h_type,mu_h=muh,sigma_h=sigma_h)
-        qc = quality(number_of_options=opts,x_type=x_type,mu_x=mux,sigma_x=sigma_x,\
-            Dm = pc.Dm,Dh = tc.Dh)
-        success = majority_decision(number_of_options=opts,Dx = qc.Dx,\
-            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
-            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
+    for k in range(3000):
+        success = multi_run(mu_h=muh,mu_x=mux,err_type=0) 
         if success == 1:
             count += 1
-    mu_va = {"mux":mux,"muh": muh, "success_rate":count/2000}
+    mu_va = {"mux":mux,"muh": muh, "success_rate":count/3000}
     return mu_va
 
-with Pool(8) as p:
-    mu_var = p.starmap(sighf,inp)
+opt_var = parallel(sighf,mu_h,mu_x)
 
-fig, ax = plt.subplots()
-z = np.array(list(map(itemgetter("success_rate"), mu_var))).reshape(len(mu_h),len(mu_x))
-cs = ax.contourf(mu_x,mu_h,z)
-cbar = fig.colorbar(cs)
-plt.xlabel('Mu_x')
-plt.ylabel('Mu_h')
-plt.legend(title = "Number_of_options = 10")
-plt.savefig("mu_h_vs_mu_x.pdf",format = "pdf")
-plt.show()
+graphic_plt(a= mu_h,b=mu_x ,array= opt_var,x_name='Mu_x',y_name="Mu_h",title="Number_of_options = 10",\
+    save_name="mu_h_vs_mu_x.pdf")
 
 # %%
 # Majority based Rate of correct choice as a function of sigma_x for varying sigma_h
 sig_x = [np.round(i*0.04,decimals=2) for i in range(101)]
 sig_h = [np.round(i*0.04,decimals=2) for i in range(101)]
-opts = 10
-
-inp = []
-for i in sig_h:
-    for j in sig_x:
-        inp.append((i,j))
-
-sig_var = []
-pc = None
 
 def sighf(sigh,sigx):
-    global pc
     count = 0
-    pc = units(population_size=population_size,number_of_options=opts,\
-            mu_m=mu_m,sigma_m=sigma_m)
-    for k in range(2000):
-        tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigh)
-        qc = quality(number_of_options=opts,x_type=x_type,mu_x=mu_x,sigma_x=sigx,\
-            Dm = pc.Dm,Dh = tc.Dh)
-        success = majority_decision(number_of_options=opts,Dx = qc.Dx,\
-            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
-            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
+    for k in range(3000):
+        success = multi_run(sigma_h=sigh,sigma_x=sigx,err_type=0) 
         if success == 1:
             count += 1
-    sig_va = {"sigx":sigx,"sigh": sigh, "success_rate":count/2000}
+    sig_va = {"sigx":sigx,"sigh": sigh, "success_rate":count/3000}
     return sig_va
 
-with Pool(8) as p:
-    sig_var = p.starmap(sighf,inp)
+opt_var = parallel(sighf,sig_h,sig_x)
 
-fig, ax = plt.subplots()
-z = np.array(list(map(itemgetter("success_rate"), sig_var))).reshape(len(sig_h),len(sig_x))
-cs = ax.contourf(sig_x,sig_h,z)
-cbar = fig.colorbar(cs)
-plt.xlabel('Sigma_x')
-plt.ylabel('Sigma_h')
-plt.legend(title = "Number_of_options = 10")
-plt.savefig("sig_h_vs_sig_x.pdf",format = "pdf")
-plt.show()
+graphic_plt(a= sig_h,b=sig_x ,array= opt_var,x_name='Sigma_x',y_name="Sigma_h",title="Number_of_options = 10",\
+    save_name="sig_h_vs_sig_x.pdf")
 
 # %%
 # Majority based Rate of correct choice as a function of quorum for varying sigma_m
-quorum = [i for i in range(100)]
+quorum = [i for i in range(1,101,1)]
 sig_m = [0,30]
-opts = 10
 
-inp = []
-for i in sig_m:
-    for j in quorum:
-        inp.append((i,j))
-
-sig_var = []
-pc = None
-
-def sigmf(sigm,quo):
-    global pc
+def quof(sigm,quo):
     count = 0
-    pc = units(population_size=population_size,number_of_options=opts,\
-            mu_m=mu_m,sigma_m=sigm)
     for k in range(2000):
-        tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
-        qc = quality(number_of_options=opts,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
-            Dm = pc.Dm,Dh = tc.Dh)
-        success = majority_decision(number_of_options=opts,Dx = qc.Dx,\
-            assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
-            sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)
+        success = multi_run(sigma_m=sigm,quorum=quo,err_type=0) 
         if success == 1:
             count += 1
     sig_va = {"sigm":sigm,"quo": quo, "success_rate":count/2000}
     return sig_va
 
-with Pool(8) as p:
-    sig_var = p.starmap(sighf,inp)
-
-# fig, ax = plt.subplots()
-# z = np.array(list(map(itemgetter("success_rate"), sig_var))).reshape(len(sig_h),len(sig_x))
-# cs = ax.contourf(sig_x,sig_h,z)
-# cbar = fig.colorbar(cs)
-# plt.xlabel('Sigma_x')
-# plt.ylabel('Sigma_h')
+opt_var = parallel(quof,sig_m,quorum)
+#%%
+print(len(opt_var))
+#%%
+fig, ax = plt.subplots()
+plt.bar(quorum,list(map(itemgetter("success_rate"), opt_var[100:])),width=1)
+plt.xlabel('Quorum')
+plt.ylabel('Rate of choice')
 # plt.legend(title = "Number_of_options = 10")
 # plt.savefig("sig_h_vs_sig_x.pdf",format = "pdf")
-# plt.show()
+plt.show()
+# %%
