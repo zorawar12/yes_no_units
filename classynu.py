@@ -66,7 +66,6 @@ class Decision_making:
     #             if votes[i]>=self.quorum:
     #                 return i
 
-    
 
 #%%
 
@@ -90,11 +89,6 @@ class qualityControl:
         Provides distribution of quality stimulus for each option upto specified decimal places
         """        
         self.Dx = np.sort(np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type))
-
-
-#%%
-
-# class visualize:
-#     def __init__(self):
+        # self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
 
 
