@@ -13,8 +13,7 @@ from multiprocessing import Pool
 from operator import itemgetter 
 
 #%%
-population_size = 5000
-number_of_options = 10
+number_of_options = 20
 mu_x = 0.0
 sigma_x = 1.0
 mu_h = 0
@@ -28,36 +27,46 @@ h_type = 3
 err_type = 0
 #%%
 
-def units(population_size,number_of_options,mu_m,sigma_m):
+def units(mu_m,sigma_m,number_of_options):
     """
-    Creates population
+    Arguments:
+    mu_m -(int) mean of distribution from where to choose number of units to be assigned
+    sigma_m - (int) standard deviation of distribution from where to choose number of units to be assigned
+    Returns:
+    Number of units to be assigned to an option choosen from N(mu_m,sigma_m) (array[1xn])
     """
-    PC = yn.populationControl(population_size=population_size,number_of_options=number_of_options)
-    PC.mu_m = mu_m
-    PC.sigma_m = sigma_m
-    PC.dm()
-    return PC
+    return np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0)
 
-def threshold(population_size,h_type,mu_h,sigma_h):
+def threshold(m_units,h_type,mu_h,sigma_h):
     """
     Creates threshold distribution
-    """
-    TC = yn.thresholdControl(population_size=population_size,h_type=h_type)
-    TC.mu_h = mu_h
-    TC.sigma_h = sigma_h
-    TC.dh()
-    return TC
+    Arguments:
+    m_units - (int from [1xn])number of assigned units to an option
+    h_type - (int) number of decimal places of thresholds
+    mu_h - (float) mean of distribution to select threshold for each unit from
+    sigma_h - (float) standard deviation of distribution to select threshold for each unit from
 
-def quality(number_of_options,x_type,mu_x,sigma_x,Dm,Dh):
+    Returns: 
+    Array[1xm_units] of thesholds for each assigned set of units to options
+    """
+    return np.round(np.random.normal(mu_h,sigma_h,m_units),decimals=h_type)
+
+def quality(number_of_options,x_type,mu_x,sigma_x):
     """
     Creates quality stimulus
+    Arguments:
+    number_of_options - (int)number of option for which quality stimulus has to be assigned
+    x_type - (int) number of decimal places of quality stimulus
+    mu_x - (float) mean of distribution to select quality stimulus for each option from
+    sigma_x - (float) standard deviation of distribution to select quality stimulus for each option from
+    Returns: 
+    Array[1 x number_of_options] of qualities for each option
     """
     QC = yn.qualityControl(number_of_options=number_of_options,x_type=x_type)
     QC.mu_x = mu_x
     QC.sigma_x = sigma_x
     QC.dx()
     QC.ref_highest_qual()
-    QC.assign_units_to_opts(Dm,Dh)
     return QC
 
 def majority_decision(number_of_options,Dx,assigned_units,err_type,\
@@ -65,15 +74,27 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
         one_correct_opt = 1):
     """
     Majority based decision
+
+    Arguments:
+    number_of_options - (int)number of options to choose best from
+    Dx - ([1 x number_of_options]) array of quality stimulus for each options (options sorted from highest quality to lowest quality)
+    assigned_units - ([[1 x m_units] for i in range(len(number_of_options)]) array of assigned units with thresholds to each options
+    err_type - (int) number of decimal places of noise
+    mu_assessment_err - (float) mean of distribution to choose noise from
+    sigma_assessment_err - (float) standard deviation of distribution to choose noise from
+    ref_highest_quality - highest quality option to measure success
+    one_correct_opt - (1,0) '0' means many correct options
+    Returns:    ,
+    success(1) or failure(0)
+
     """
     DM = yn.Decision_making(number_of_options=number_of_options,err_type=err_type,\
     mu_assessment_err=mu_assessment_err,sigma_assessment_err=sigma_assessment_err)
 
     DM.vote_counter(assigned_units,Dx)
-    DM.vote_associator(Dx)
 
-    # plt.scatter(Dx,DM.votes)
-    # plt.show()
+    plt.scatter(Dx,DM.votes)
+    plt.show()
 
     if one_correct_opt == 1:
         if DM.one_correct(ref_highest_quality) == 1:
@@ -88,50 +109,38 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
             return 0
     
 
+def one_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h,\
+    x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err):
+
+    pc = np.array(units(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m)).astype(int)
+
+    units_distribution = []
+    for i in pc:
+        units_distribution.append(threshold(m_units = i ,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h))
+
+    qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x)
+
+    dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,assigned_units= units_distribution,\
+        err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,\
+        ref_highest_quality=qc.ref_highest_quality)                                   
+
+    if dec == 1:
+        print("success")
+    else:
+        print("failed")
+
+
 #%%
 # Without assesment error Majority based decision
-pc = units(population_size=population_size,number_of_options=number_of_options,\
-    mu_m=mu_m,sigma_m=sigma_m)
-tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
-qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
-    Dm = pc.Dm,Dh = tc.Dh)
-dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,\
-    assigned_units= qc.assigned_units,err_type=err_type,mu_assessment_err= mu_assessment_err,\
-    sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality)                                   
-if dec == 1:
-    print("success")
-else:
-    print("failed")
+one_run()
 
 #%%
 # With assessment error Majority based decision
-pc = units(population_size=population_size,number_of_options=number_of_options,\
-    mu_m=mu_m,sigma_m=sigma_m)
-tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
-qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,\
-    Dm = pc.Dm,Dh = tc.Dh)
-dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,\
-    assigned_units= qc.assigned_units,err_type=err_type,mu_assessment_err= mu_assessment_err,\
-    sigma_assessment_err=0.1,ref_highest_quality=qc.ref_highest_quality)        
-if dec == 1:
-    print("success")
-else:
-    print("failed")
+one_run(sigma_assessment_err=0.1)
 
 #%%
 # Random choice when more than one option's correct Majority based decision
-pc = units(population_size=population_size,number_of_options=number_of_options,\
-    mu_m=mu_m,sigma_m=sigma_m)
-tc = threshold(population_size=population_size,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)
-qc = quality(number_of_options=number_of_options,x_type=0,mu_x=mu_x,sigma_x=sigma_x,\
-    Dm = pc.Dm,Dh = tc.Dh)
-dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,\
-    assigned_units= qc.assigned_units,err_type=0,mu_assessment_err= mu_assessment_err,\
-    sigma_assessment_err=sigma_assessment_err,ref_highest_quality=qc.ref_highest_quality,one_correct_opt=0)
-if dec == 1:
-    print("success")
-else:
-    print("failed")
+one_run(x_type=0,err_type=0)
 
 #%%
 # Majority based Rate of correct choice as a function of sigma_h for varying number of options
