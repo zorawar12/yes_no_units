@@ -35,6 +35,22 @@ class Decision_making:
             votes.append(count)
         self.votes = votes
 
+    # def quorum_decision(self,assigned_units,Dx):
+    #     """
+    #     Each unit provides its decision and votes are counted for each options 
+    #     """
+    #     votes = []
+    #     for i in range(len(assigned_units)):
+    #         count = 0
+    #         assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
+    #         for j in range(len(assigned_units[i])):
+    #             if assigned_units[i][j]["threshold"]  < Dx[i] + assesment_error[j] :
+    #                 count += 1
+    #         votes.append(count)
+    #         for i in range(self.number_of_options):
+    #             if votes[i]>=self.quorum:
+    #                 return i
+
     def vote_associator(self,Dx):
         """
         Associates option with number of votes it received
