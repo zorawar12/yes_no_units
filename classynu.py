@@ -24,15 +24,13 @@ class Decision_making:
         """
         Each unit provides its decision and votes are counted for each options 
         """
-        if self.quorum == None :
-            votes = [0 for i in range(self.number_of_options)]
-
-            for i in range(self.number_of_options):
-                assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
-                for j in range(len(assigned_units[i])):
-                    if (assigned_units[i][j] < (Dx[i] + assesment_error[j])):
-                        votes[i] += 1
-            self.votes = votes
+        votes = [0 for i in range(self.number_of_options)]
+        for i in range(self.number_of_options):
+            assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
+            for j in range(len(assigned_units[i])):
+                if (assigned_units[i][j] < (Dx[i] + assesment_error[j])):
+                    votes[i] += 1
+        self.votes = votes
           
     def one_correct(self,ref_highest_quality):
         """

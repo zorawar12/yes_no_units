@@ -109,40 +109,19 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
             else:
                 return 0
     else:
-
-        # yes = [0 for i in range(self.number_of_options)]
-        # no = 0
-        # units_required_to_reach_quorum = [0 for i in range(self.number_of_options)]
-
-        # for i in range(self.number_of_options):
-        #     yes[i] = 0
-        #     j = 0
-        #     assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
-        #     while yes[i]<self.quorum:
-        #         if units_required_to_reach_quorum[i] == len(assigned_units[i]):
-        #             break
-        #         if (assigned_units[i][j] < (Dx[i] + assesment_error[j])):
-        #             yes[i] += 1
-        #         units_required_to_reach_quorum[i] += 1
-        #         j += 1
-        # if np.array(units_required_to_reach_quorum).all()!= np.array([len(a) for a in assigned_units]):
-        #     no += 1
-        # else:
-        #     loc = np.where(units_required_to_reach_quorum=min(units_required_to_reach_quorum))[0]
-        #     if len(loc) == 1:    
-        #         if loc[0] == ref_highest_quality:
-        #             return 1
-        #     else:
-        #         opt_choosen = np.random.randint(0,len(available_opt))
-        #         if loc[opt_choosen] ==  ref_highest_quality:
-        #             return 1
-        # should return output as an array for yes, no and quorum reached
         correct,quorum_reached = DM.quorum_voting(assigned_units,Dx,ref_highest_quality)
-
-        # plt.scatter(Dx,DM.votes)
-        # plt.show()
-
-        return correct,quorum_reached
+        
+        DM.vote_counter(assigned_units,Dx)
+        one_correct = 0
+        multi_correct = 0
+        if one_correct_opt == 1:
+            if DM.one_correct(ref_highest_quality) == 1:
+                one_correct = 1
+        else:
+            if DM.multi_correct(ref_highest_quality) == 1:
+                multi_correct = 1
+        
+        return correct,quorum_reached,one_correct,multi_correct
 
 def one_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h,\
     x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err):
@@ -161,6 +140,7 @@ def one_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type
 
     if dec == 1:
         print("success")
+
     else:
         print("failed")
 
@@ -179,7 +159,7 @@ def multi_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_ty
     dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,assigned_units= units_distribution,\
         err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,\
         ref_highest_quality=qc.ref_highest_quality,quorum=quorum)  
-    # print(dec)
+
     return dec
 
 def plt_show(data_len,array,var,plt_var,x_name,title,save_name):
@@ -225,11 +205,12 @@ def graphic_plt(a,b,array,x_name,y_name,title,save_name):
     plt.savefig(save_name,format = "pdf")
     plt.show()
 
-def bar(quor,opt_v,save_name):
+def bar(quor,opt_v,save_name,correct):
     fig, ax = plt.subplots()
     plt.bar(quor,[1 for i in range(1,101,1)],width=1,color = "white",edgecolor='black')
     plt.bar(quor,list(map(itemgetter("q_not_reached"), opt_v)),width=1,color = "orange",edgecolor='black')
     plt.bar(quor,list(map(itemgetter("success_rate"), opt_v)),width=1,color = "blue",edgecolor='black')
+    plt.plot(quorum,list(map(itemgetter(correct), opt_v)),color ="red")
     plt.xlabel('Quorum')
     plt.ylabel('Rate of choice')
     # plt.legend(title = leg)
@@ -408,12 +389,16 @@ sig_m = [0,30]
 def quof(sigm,quo):
     right_count = 0
     q_not_reached = 0
+    one_correct_count = 0
+    multi_correct_count = 0
     for k in range(2000):
-        correct,quorum_reached = multi_run(sigma_m=sigm,quorum=quo,err_type=0)
+        correct,quorum_reached,one_correct,multi_correct = multi_run(sigma_m=sigm,quorum=quo,err_type=0)
         right_count += correct
         if quorum_reached == 1:
             q_not_reached += 1
-    sig_va = {"sigm":sigm,"quo": quo, "success_rate":right_count/2000,"q_not_reached":q_not_reached/2000}
+        multi_correct_count += multi_correct
+        one_correct_count += one_correct
+    sig_va = {"sigm":sigm,"quo": quo, "success_rate":right_count/2000,"q_not_reached":q_not_reached/2000,"one_correct":one_correct_count/2000,"multi_correct":multi_correct_count/2000}
     return sig_va
 
 opt_var = parallel(quof,sig_m,quorum)
@@ -430,5 +415,5 @@ for i in opt_var:
         prev = i["sigm"]
 
 for i in range(len(save_name)):
-    bar(quorum,opt_v[str(sig_m[i])],save_name[i])
+    bar(quorum,opt_v[str(sig_m[i])],save_name[i],"one_correct")
 
