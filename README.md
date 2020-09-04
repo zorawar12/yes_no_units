@@ -21,4 +21,5 @@ Clone this repository and run the main programe in order to visualize results.
 
 ### Who do I talk to? ###
 
-* Repo owner or admin : **Swadhin Agrawal**
+* Code Author : **Swadhin Agrawal**
+* Supervisors : **Andrea Giovanni Reina,P.B Sujit**
