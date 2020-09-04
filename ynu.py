@@ -22,7 +22,7 @@ mu_m = 100
 sigma_m = 0
 mu_assessment_err = 0.0
 sigma_assessment_err = 0.0
-x_type = 3
+x_type = 0
 h_type = 3
 err_type = 0
 #%%
@@ -417,3 +417,4 @@ for i in opt_var:
 for i in range(len(save_name)):
     bar(quorum,opt_v[str(sig_m[i])],save_name[i],"one_correct")
 
+# %%
