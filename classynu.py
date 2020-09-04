@@ -49,6 +49,10 @@ class Decision_making:
             return 1
 
     def quorum_voting(self,assigned_units,Dx,ref_highest_quality):
+        """
+        success(1) or failure(0) ,quorum_reached(success(1) or failure(0)),majority decision (one_correct(success(1) or failure(0)),multi_correct(success(1) or failure(0)))
+        """
+
         units_used = [0 for i in range(self.number_of_options)]
         quorum_reached = 0
         correct = 0

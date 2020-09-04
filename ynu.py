@@ -2,7 +2,7 @@
 # yes/no decision units.
 
 # Author: Swadhin Agrawal
-# E-mail: swadhin12a@iiserb.ac.in
+# E-mail: swadhin20@iiserb.ac.in
 
 #%%
 
@@ -13,18 +13,18 @@ from multiprocessing import Pool
 from operator import itemgetter 
 
 #%%
-number_of_options = 10
-mu_x = 0.0
-sigma_x = 1.0
-mu_h = 0
-sigma_h = 1.0
-mu_m = 100
-sigma_m = 0
-mu_assessment_err = 0.0
-sigma_assessment_err = 0.0
-x_type = 0
-h_type = 3
-err_type = 0
+number_of_options = 10                      #   Number of options to choose best one from
+mu_x = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
+sigma_x = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
+mu_h = 0                                    #   Mean of distribution from which units threshold are sampled randomly
+sigma_h = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
+mu_m = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
+sigma_m = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
+mu_assessment_err = 0.0                     #   Mean of distribution from which units quality assessment error are sampled randomly
+sigma_assessment_err = 0.0                  #   Standard deviation of distribution from which units quality assessment error are sampled randomly
+x_type = 0                                  #   Number of decimal places of quality stimulus
+h_type = 3                                  #   Number of decimal places of units threshold
+err_type = 0                                #   Number of decimal places of quality assessment error
 #%%
 
 def units(mu_m,sigma_m,number_of_options):
@@ -84,9 +84,10 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
     sigma_assessment_err - (float) standard deviation of distribution to choose noise from
     ref_highest_quality - highest quality option to measure success
     one_correct_opt - (1,0) '0' means many correct options
-    Returns:    ,
-    success(1) or failure(0)
-
+    quorum - (int) quorum to be reached first in order to consider an option as best
+    Returns:
+    If quorum = None then success(1) or failure(0)
+    else success(1) or failure(0) ,quorum_reached(success(1) or failure(0)),majority decision (one_correct(success(1) or failure(0)),multi_correct(success(1) or failure(0)))
     """
     DM = yn.Decision_making(number_of_options=number_of_options,err_type=err_type,\
     mu_assessment_err=mu_assessment_err,sigma_assessment_err=sigma_assessment_err)
@@ -418,3 +419,9 @@ for i in range(len(save_name)):
     bar(quorum,opt_v[str(sig_m[i])],save_name[i],"one_correct")
 
 # %%
+# Decoy effect in individual decision and collective decision
+
+
+
+
+
