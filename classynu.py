@@ -1,5 +1,5 @@
 # Nature of collective-decision making by simple 
-# yes/no decision units.
+# votes/no decision units.
 
 # Author: Swadhin Agrawal
 # E-mail: swadhin12a@iiserb.ac.in
@@ -24,20 +24,16 @@ class Decision_making:
         """
         Each unit provides its decision and votes are counted for each options 
         """
-        votes = [0 for i in range(self.number_of_options)]
+        if self.quorum == None :
+            votes = [0 for i in range(self.number_of_options)]
 
-        for i in range(self.number_of_options):
-            count = 0
-            assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
-            for j in range(len(assigned_units[i])):
-                if (assigned_units[i][j] < (Dx[i] + assesment_error[j])):
-                    votes[i] += 1
-                    if self.quorum != None :    
-                        for s in range(len(votes)):    
-                            if  votes[s] >= self.quorum:
-                                return s
-        self.votes = votes
-
+            for i in range(self.number_of_options):
+                assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
+                for j in range(len(assigned_units[i])):
+                    if (assigned_units[i][j] < (Dx[i] + assesment_error[j])):
+                        votes[i] += 1
+            self.votes = votes
+          
     def one_correct(self,ref_highest_quality):
         """
         Returns success/failure of decision making when there is only one correct decision
@@ -53,6 +49,47 @@ class Decision_making:
         opt_choosen = np.random.randint(0,len(available_opt))
         if available_opt[opt_choosen] ==  ref_highest_quality:
             return 1
+
+    def quorum_voting(self,assigned_units,Dx,ref_highest_quality):
+        units_used = [0 for i in range(self.number_of_options)]
+        quorum_reached = 0
+        correct = 0
+        for i in range(self.number_of_options):
+            assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
+            count = 0
+            while count<self.quorum:
+                if units_used[i] == len(assigned_units[i]):
+                    break
+                if (assigned_units[i][units_used[i]] < (Dx[i] + assesment_error[units_used[i]])):
+                    count += 1
+                units_used[i] += 1
+        units_used = np.array(units_used)
+        loc = np.array(np.where(units_used == min(units_used)))[0]
+        flag = 0
+        for i in range(self.number_of_options):
+            if units_used[i] == len(assigned_units[i]):
+                flag += 1
+        
+        if flag == self.number_of_options:
+            quorum_reached = 1
+            return correct,quorum_reached
+        
+        if len(loc) == 1:
+            if loc[0] == ref_highest_quality:
+                correct = 1
+                quorum_reached = 1
+                return correct,quorum_reached
+            else:
+                return correct,quorum_reached
+        else:
+            opt_choosen = np.random.randint(0,len(loc))
+            if loc[opt_choosen] ==  ref_highest_quality:
+                correct = 1
+                quorum_reached = 1
+                return correct,quorum_reached
+            else:
+                return correct,quorum_reached
+
 
 #%%
 
