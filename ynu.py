@@ -351,11 +351,11 @@ mu_h = [np.round(-4.0+i*0.08,decimals=2) for i in range(101)]
 
 def sighf(muh,mux):
     count = 0
-    for k in range(3000):
+    for k in range(1000):
         success = multi_run(mu_h=muh,mu_x=mux,err_type=0) 
         if success == 1:
             count += 1
-    mu_va = {"mux":mux,"muh": muh, "success_rate":count/3000}
+    mu_va = {"mux":mux,"muh": muh, "success_rate":count/1000}
     return mu_va
 
 opt_var = parallel(sighf,mu_h,mu_x)
@@ -370,11 +370,11 @@ sig_h = [np.round(i*0.04,decimals=2) for i in range(101)]
 
 def sighf(sigh,sigx):
     count = 0
-    for k in range(3000):
+    for k in range(1000):
         success = multi_run(sigma_h=sigh,sigma_x=sigx,err_type=0) 
         if success == 1:
             count += 1
-    sig_va = {"sigx":sigx,"sigh": sigh, "success_rate":count/3000}
+    sig_va = {"sigx":sigx,"sigh": sigh, "success_rate":count/1000}
     return sig_va
 
 opt_var = parallel(sighf,sig_h,sig_x)
