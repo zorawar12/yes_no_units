@@ -2,7 +2,7 @@
 # votes/no decision units.
 
 # Author: Swadhin Agrawal
-# E-mail: swadhin12a@iiserb.ac.in
+# E-mail: swadhin20@iiserb.ac.in
 
 #%%
 
@@ -32,14 +32,7 @@ class Decision_making:
                     votes[i] += 1
         self.votes = votes
           
-    def one_correct(self,ref_highest_quality):
-        """
-        Returns success/failure of decision making when there is only one correct decision
-        """
-        if np.array(np.where(np.array(self.votes) == max(self.votes)))[0][0] == ref_highest_quality:
-            return 1
-
-    def multi_correct(self,ref_highest_quality):
+    def best_among_bests(self,ref_highest_quality):
         """
         Returns success/failure of decision making when there are multiple correct decisions as per the units
         """        
@@ -47,15 +40,14 @@ class Decision_making:
         opt_choosen = np.random.randint(0,len(available_opt))
         if available_opt[opt_choosen] ==  ref_highest_quality:
             return 1
+        else:
+            return 0
 
     def quorum_voting(self,assigned_units,Dx,ref_highest_quality):
         """
         success(1) or failure(0) ,quorum_reached(success(1) or failure(0)),majority decision (one_correct(success(1) or failure(0)),multi_correct(success(1) or failure(0)))
         """
-
         units_used = [0 for i in range(self.number_of_options)]
-        quorum_reached = 0
-        correct = 0
         for i in range(self.number_of_options):
             assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
             count = 0
@@ -67,31 +59,25 @@ class Decision_making:
                 units_used[i] += 1
         units_used = np.array(units_used)
         loc = np.array(np.where(units_used == min(units_used)))[0]
+        opt_choosen = np.random.randint(0,len(loc))
+
         flag = 0
         for i in range(self.number_of_options):
             if units_used[i] == len(assigned_units[i]):
                 flag += 1
-        
-        if flag == self.number_of_options:
-            quorum_reached = 1
-            return correct,quorum_reached
-        
-        if len(loc) == 1:
-            if loc[0] == ref_highest_quality:
-                correct = 1
-                quorum_reached = 1
-                return correct,quorum_reached
-            else:
-                return correct,quorum_reached
-        else:
-            opt_choosen = np.random.randint(0,len(loc))
-            if loc[opt_choosen] ==  ref_highest_quality:
-                correct = 1
-                quorum_reached = 1
-                return correct,quorum_reached
-            else:
-                return correct,quorum_reached
+        if flag==self.number_of_options: 
+            quorum_reached = 0
+            result = 0
+            return result,quorum_reached
 
+        if loc[opt_choosen] ==  ref_highest_quality:
+            result = 1
+            quorum_reached = 1
+            return result,quorum_reached
+        else:
+            quorum_reached = 1
+            result = 0
+            return result,quorum_reached
 
 #%%
 
@@ -108,7 +94,9 @@ class qualityControl:
         """
         Provides known highest quality option
         """
-        self.ref_highest_quality = np.array(np.where(self.Dx == max(self.Dx)))[0][0]
+        best_list = np.array(np.where(self.Dx == max(self.Dx)))[0]
+        opt_choosen = np.random.randint(0,len(best_list))
+        self.ref_highest_quality = best_list[opt_choosen]
 
     def dx(self):
         """

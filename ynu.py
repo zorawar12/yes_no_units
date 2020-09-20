@@ -22,7 +22,7 @@ mu_m = 100                                  #   Mean of distribution from which 
 sigma_m = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
 mu_assessment_err = 0.0                     #   Mean of distribution from which units quality assessment error are sampled randomly
 sigma_assessment_err = 0.0                  #   Standard deviation of distribution from which units quality assessment error are sampled randomly
-x_type = 0                                  #   Number of decimal places of quality stimulus
+x_type = 3                                  #   Number of decimal places of quality stimulus
 h_type = 3                                  #   Number of decimal places of units threshold
 err_type = 0                                #   Number of decimal places of quality assessment error
 #%%
@@ -71,7 +71,7 @@ def quality(number_of_options,x_type,mu_x,sigma_x):
 
 def majority_decision(number_of_options,Dx,assigned_units,err_type,\
     mu_assessment_err,sigma_assessment_err,ref_highest_quality,\
-        one_correct_opt = 1,quorum = None):
+    quorum = None):
     """
     Majority based decision
 
@@ -83,7 +83,6 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
     mu_assessment_err - (float) mean of distribution to choose noise from
     sigma_assessment_err - (float) standard deviation of distribution to choose noise from
     ref_highest_quality - highest quality option to measure success
-    one_correct_opt - (1,0) '0' means many correct options
     quorum - (int) quorum to be reached first in order to consider an option as best
     Returns:
     If quorum = None then success(1) or failure(0)
@@ -92,37 +91,17 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
     DM = yn.Decision_making(number_of_options=number_of_options,err_type=err_type,\
     mu_assessment_err=mu_assessment_err,sigma_assessment_err=sigma_assessment_err)
     DM.quorum = quorum
+    DM.vote_counter(assigned_units,Dx)
+    majority_dec = DM.best_among_bests(ref_highest_quality)
     if quorum == None:
-        DM.vote_counter(assigned_units,Dx)
-
         # plt.scatter(Dx,DM.votes)
         # plt.show()
 
-        if one_correct_opt == 1:
-            if DM.one_correct(ref_highest_quality) == 1:
-                return 1
-            else:
-                return 0
-            
-        else:
-            if DM.multi_correct(ref_highest_quality) == 1:
-                return 1
-            else:
-                return 0
+        return majority_dec
+    
     else:
-        correct,quorum_reached = DM.quorum_voting(assigned_units,Dx,ref_highest_quality)
-        
-        DM.vote_counter(assigned_units,Dx)
-        one_correct = 0
-        multi_correct = 0
-        if one_correct_opt == 1:
-            if DM.one_correct(ref_highest_quality) == 1:
-                one_correct = 1
-        else:
-            if DM.multi_correct(ref_highest_quality) == 1:
-                multi_correct = 1
-        
-        return correct,quorum_reached,one_correct,multi_correct
+        result,quorum_reached = DM.quorum_voting(assigned_units,Dx,ref_highest_quality)
+        return result,quorum_reached,majority_dec
 
 def one_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h,\
     x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err):
@@ -208,9 +187,9 @@ def graphic_plt(a,b,array,x_name,y_name,title,save_name):
 
 def bar(quor,opt_v,save_name,correct):
     fig, ax = plt.subplots()
-    plt.bar(quor,[1 for i in range(1,101,1)],width=1,color = "white",edgecolor='black')
-    plt.bar(quor,list(map(itemgetter("q_not_reached"), opt_v)),width=1,color = "orange",edgecolor='black')
-    plt.bar(quor,list(map(itemgetter("success_rate"), opt_v)),width=1,color = "blue",edgecolor='black')
+    ax.bar(quor,[1 for i in range(1,101,1)],width=1,color = "white",edgecolor='black')
+    ax.bar(quor,list(map(itemgetter("success_rate"), opt_v)),width=1,color = "blue",edgecolor='black')
+    ax.bar(quor,list(map(itemgetter("q_not_reached"), opt_v)),width=1,color = "orange",edgecolor='black',bottom = list(map(itemgetter("success_rate"), opt_v)))
     plt.plot(quorum,list(map(itemgetter(correct), opt_v)),color ="red")
     plt.xlabel('Quorum')
     plt.ylabel('Rate of choice')
@@ -390,21 +369,19 @@ sig_m = [0,30]
 def quof(sigm,quo):
     right_count = 0
     q_not_reached = 0
-    one_correct_count = 0
-    multi_correct_count = 0
-    for k in range(2000):
-        correct,quorum_reached,one_correct,multi_correct = multi_run(sigma_m=sigm,quorum=quo,err_type=0)
+    majority_dec_count = 0
+    for k in range(1000):
+        correct,quorum_reached,majority_dec = multi_run(sigma_m=sigm,quorum=quo,err_type=0)
         right_count += correct
-        if quorum_reached == 1:
+        if quorum_reached == 0:
             q_not_reached += 1
-        multi_correct_count += multi_correct
-        one_correct_count += one_correct
-    sig_va = {"sigm":sigm,"quo": quo, "success_rate":right_count/2000,"q_not_reached":q_not_reached/2000,"one_correct":one_correct_count/2000,"multi_correct":multi_correct_count/2000}
+        majority_dec_count += majority_dec
+    sig_va = {"sigm":sigm,"quo": quo, "success_rate":right_count/1000,"q_not_reached":q_not_reached/1000,"maj":majority_dec_count/1000}
     return sig_va
 
 opt_var = parallel(quof,sig_m,quorum)
 
-save_name = ["quorum_sigma_m"+str(i)+".pdf" for i in sig_m]
+save_name = ["quorum_sigma_m"+str(i)+"unsorted.pdf" for i in sig_m]
 opt_v = {}
 prev = None
 for i in opt_var:
@@ -416,7 +393,8 @@ for i in opt_var:
         prev = i["sigm"]
 
 for i in range(len(save_name)):
-    bar(quorum,opt_v[str(sig_m[i])],save_name[i],"one_correct")
+    bar(quorum,opt_v[str(sig_m[i])],save_name[i],"maj")
+
 
 # %%
 # Decoy effect in individual decision and collective decision
@@ -424,4 +402,4 @@ for i in range(len(save_name)):
 
 
 
-
+# %%
