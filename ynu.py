@@ -216,11 +216,11 @@ opts = [2,10]#2*i for i in range(2,6,3)]
 
 def sighf(op,sigh):
     count = 0
-    for k in range(2000):
+    for k in range(1000):
         success = multi_run(sigma_h=sigh,number_of_options=op,err_type=0) 
         if success == 1:
             count += 1
-    opt_va = {"opt":op,"sigma": sigh, "success_rate":count/2000}
+    opt_va = {"opt":op,"sigma": sigh, "success_rate":count/1000}
     return opt_va
 
 opt_var = parallel(sighf,opts,sig_h)
@@ -400,6 +400,20 @@ for i in range(len(save_name)):
 # Decoy effect in individual decision and collective decision
 
 
-
-
 # %%
+# pc = np.array(units(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m)).astype(int)
+# flags = [0 for i in pc]
+# for k in range(1000):
+#     count = [0 for i in pc]
+#     c = 0
+#     for i in pc:
+#         un = abs(np.sort(threshold(m_units = i ,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h)))
+#         for u in un:
+#             if u>2.5:
+#                 count[c] += 1
+#         c += 1
+
+#     max_list = np.where(np.array(count) == max(np.array(count)))[0]
+#     for i in max_list:
+#         flags[i] += 1
+# print(flags)
