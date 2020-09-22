@@ -19,6 +19,8 @@ class Decision_making:
         self.mu_assessment_err = mu_assessment_err
         self.sigma_assessment_err = sigma_assessment_err
         self.votes = None
+        self.no_votes = None
+        self.no_proportion = None
 
     def vote_counter(self,assigned_units,Dx):
         """
@@ -32,6 +34,40 @@ class Decision_making:
                     votes[i] += 1
         self.votes = votes
           
+    def for_against_vote_counter(self,assigned_units,Dx):
+        """
+        Each unit provides its decision and votes are counted for each options 
+        """
+        votes = [0 for i in range(self.number_of_options)]
+        no_votes = [0 for i in range(self.number_of_options)]
+        for i in range(self.number_of_options):
+            assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
+            for j in range(len(assigned_units[i])):
+                if (assigned_units[i][j] < (Dx[i] + assesment_error[j])):
+                    votes[i] += 1
+                else:
+                    no_votes[i] += 1
+        self.votes = votes
+        self.no_votes = no_votes
+        self.no_proportion = [votes[i]/(1+no_votes[i]) for i in range(len(no_votes))]
+
+    def best_among_bests_no(self,ref_highest_quality):
+        """
+        Returns success/failure of decision making when there are multiple correct decisions as per the units
+        """        
+        # available_opt = np.array(np.where(np.array(self.votes) == max(self.votes)))[0]
+        # best_opt = None
+        # for i in range(len(available_opt)):
+        #     if self.no_proportion.index(min(self.no_proportion))==available_opt[i]:
+        #         best_opt = i
+        #         break
+        # if best_opt == None:
+        #     best_opt = np.random.randint(0,len(available_opt))
+        if self.no_proportion.index(max(self.no_proportion)) ==  ref_highest_quality:
+            return 1
+        else:
+            return 0
+
     def best_among_bests(self,ref_highest_quality):
         """
         Returns success/failure of decision making when there are multiple correct decisions as per the units
@@ -102,6 +138,6 @@ class qualityControl:
         """
         Provides distribution of quality stimulus for each option upto specified decimal places
         """        
-        # self.Dx = np.sort(np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type))
-        self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
+        self.Dx = np.sort(np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type))
+        # self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
 

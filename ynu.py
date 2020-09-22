@@ -417,3 +417,91 @@ for i in range(len(save_name)):
 #     for i in max_list:
 #         flags[i] += 1
 # print(flags)
+
+#%%
+# Without assesment error Majority based decision
+
+number_of_options = 10                      #   Number of options to choose best one from
+mu_x = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
+sigma_x = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
+mu_h = 0                                    #   Mean of distribution from which units threshold are sampled randomly
+sigma_h = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
+mu_m = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
+sigma_m = 30                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
+mu_assessment_err = 0.0                     #   Mean of distribution from which units quality assessment error are sampled randomly
+sigma_assessment_err = 0.0                  #   Standard deviation of distribution from which units quality assessment error are sampled randomly
+x_type = 3                                  #   Number of decimal places of quality stimulus
+h_type = 3                                  #   Number of decimal places of units threshold
+err_type = 0                                #   Number of decimal places of quality assessment error
+
+def majority_decision_no(number_of_options,Dx,assigned_units,err_type,\
+    mu_assessment_err,sigma_assessment_err,ref_highest_quality,\
+    quorum = None):
+    """
+    Majority based decision
+
+    Arguments:
+    number_of_options - (int)number of options to choose best from
+    Dx - ([1 x number_of_options]) array of quality stimulus for each options (options sorted from highest quality to lowest quality)
+    assigned_units - ([[1 x m_units] for i in range(len(number_of_options)]) array of assigned units with thresholds to each options
+    err_type - (int) number of decimal places of noise
+    mu_assessment_err - (float) mean of distribution to choose noise from
+    sigma_assessment_err - (float) standard deviation of distribution to choose noise from
+    ref_highest_quality - highest quality option to measure success
+    quorum - (int) quorum to be reached first in order to consider an option as best
+    Returns:
+    If quorum = None then success(1) or failure(0)
+    else success(1) or failure(0) ,quorum_reached(success(1) or failure(0)),majority decision (one_correct(success(1) or failure(0)),multi_correct(success(1) or failure(0)))
+    """
+    DM = yn.Decision_making(number_of_options=number_of_options,err_type=err_type,\
+    mu_assessment_err=mu_assessment_err,sigma_assessment_err=sigma_assessment_err)
+    DM.quorum = quorum
+    DM.vote_counter(assigned_units,Dx)
+    DM.for_against_vote_counter(assigned_units,Dx)
+    majority_dec = DM.best_among_bests_no(ref_highest_quality)
+    if quorum == None:
+        # plt.scatter(Dx,DM.votes)
+        # plt.show()
+        return majority_dec
+    else:
+        result,quorum_reached = DM.quorum_voting(assigned_units,Dx,ref_highest_quality)
+        return result,quorum_reached,majority_dec
+
+def multi_run_no(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h,\
+    x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,err_type=err_type,mu_assessment_err= mu_assessment_err,\
+    sigma_assessment_err=sigma_assessment_err,quorum= None):
+
+    pc = np.array(units(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m)).astype(int)
+
+    units_distribution = []
+    for i in pc:
+        units_distribution.append(threshold(m_units = i ,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h))
+
+    qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x)
+
+    dec = majority_decision_no(number_of_options=number_of_options,Dx = qc.Dx,assigned_units= units_distribution,\
+        err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,\
+        ref_highest_quality=qc.ref_highest_quality,quorum=quorum)  
+
+    return dec
+
+# Majority based Rate of correct choice as a function of sigma_h for varying number of options
+sig_h = [0.0+i*0.01 for i in range(101)]
+opts = [2,10]#2*i for i in range(2,6,3)]
+
+def sighf(op,sigh):
+    count = 0
+    for k in range(1000):
+        success = multi_run_no(sigma_h=sigh,number_of_options=op,err_type=0) 
+        if success == 1:
+            count += 1
+    opt_va = {"opt":op,"sigma": sigh, "success_rate":count/1000}
+    return opt_va
+
+opt_var = parallel(sighf,opts,sig_h)
+
+plt_show(data_len= opts,array= opt_var,var= "opt", plt_var="sigma",x_name='Sigma_h',\
+    title="Number of options",save_name="Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
+
+
+# %%
