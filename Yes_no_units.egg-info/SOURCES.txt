@@ -3,6 +3,7 @@ setup.py
 Yes_no_units.egg-info/PKG-INFO
 Yes_no_units.egg-info/SOURCES.txt
 Yes_no_units.egg-info/dependency_links.txt
+Yes_no_units.egg-info/entry_points.txt
 Yes_no_units.egg-info/top_level.txt
 src/__init__.py
 src/classynu.py

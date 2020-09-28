@@ -1,0 +1,3 @@
+[console_scripts]
+my_start = src.start:main
+

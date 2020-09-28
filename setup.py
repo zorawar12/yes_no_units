@@ -9,7 +9,7 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts':[
-            'my_start=src.start:main',
+            'my_start=start:main',
         ]
     }
 )
