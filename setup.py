@@ -11,5 +11,10 @@ setup(
         'console_scripts':[
             'my_start=start:main',
         ]
-    }
+    },
+    install_requires=[
+        'numpy==1.15',
+        'matplotlib>=3.0.3'
+    ],
+    python_requires='==3.5',
 )

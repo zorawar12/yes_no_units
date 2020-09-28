@@ -203,6 +203,8 @@ def bar(quor,opt_v,save_name,correct):
 def main():
     one_run()
 
+
+
 #%%
 # With assessment error Majority based decision
 # one_run(sigma_assessment_err=0.1)
