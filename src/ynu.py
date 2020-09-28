@@ -199,7 +199,9 @@ def bar(quor,opt_v,save_name,correct):
 
 #%%
 # Without assesment error Majority based decision
-one_run()
+
+def main():
+    one_run()
 
 #%%
 # With assessment error Majority based decision
