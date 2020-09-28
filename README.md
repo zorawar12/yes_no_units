@@ -13,11 +13,12 @@ Clone this repository and run the main programe in order to visualize results.
 * Main program: ynu.py
 * Dependencies  
 
-1. Numpy
-2. Matplotlib.pyplot
+1. Numpy 1.15
+2. Matplotlib 3.0.3
 3. classynu
 4. operator.itemgetter
 5. multiprocessing.Pool
+6. Python 3.5
 
 ### Who do I talk to? ###
 
