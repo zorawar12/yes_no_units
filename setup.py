@@ -1,5 +1,3 @@
-
-
 from setuptools import setup,find_packages
 
 setup(
@@ -9,12 +7,12 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts':[
-            'my_start=start:main',
+            'ynu=start:main',
         ]
     },
     install_requires=[
         'numpy==1.15',
         'matplotlib>=3.0.3'
     ],
-    python_requires='==3.5',
+    python_requires='==3.5.6',
 )

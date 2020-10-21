@@ -7,5 +7,7 @@ Yes_no_units.egg-info/entry_points.txt
 Yes_no_units.egg-info/requires.txt
 Yes_no_units.egg-info/top_level.txt
 src/__init__.py
+src/accounting_no.py
+src/classexploration.py
 src/classynu.py
 src/ynu.py

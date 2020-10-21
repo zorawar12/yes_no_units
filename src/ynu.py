@@ -28,32 +28,31 @@ x_type = 3                                  #   Number of decimal places of qual
 h_type = 3                                  #   Number of decimal places of units threshold
 err_type = 0                                #   Number of decimal places of quality assessment error
 
-if __name__ == "__main__":
-    # number_of_options = 10                      #   Number of options to choose best one from
-    # mu_x = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
-    # sigma_x = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
-    # mu_h = 0                                    #   Mean of distribution from which units threshold are sampled randomly
-    # sigma_h = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
-    # mu_m = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
-    # sigma_m = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
-    # mu_assessment_err = 0.0                     #   Mean of distribution from which units quality assessment error are sampled randomly
-    # sigma_assessment_err = 0.0                  #   Standard deviation of distribution from which units quality assessment error are sampled randomly
-    # x_type = 3                                  #   Number of decimal places of quality stimulus
-    # h_type = 3                                  #   Number of decimal places of units threshold
-    # err_type = 0                                #   Number of decimal places of quality assessment error
+Without_assesment_error_Majority_based_decision = 1
+With_assesment_error_Majority_based_decision = 0
+random_choice_many_best_option = 0
+success_rate_sig_h_number_options = 0
+success_rate_mu_h_number_options = 0
+success_rate_number_options_mu_h = 0
+success_rate_mu_m_number_options = 0
+success_rate_sig_m_number_options = 0
+success_rate_sig_h_mu_h = 0
+success_rate_mu_x_mu_h = 0
+success_rate_sig_x_sig_h = 0
+rate_of_choice_quorum_sig_m = 0
 
-    Without_assesment_error_Majority_based_decision = 0
-    With_assesment_error_Majority_based_decision = 0
-    random_choice_many_best_option = 0
-    success_rate_sig_h_number_options = 1
-    success_rate_mu_h_number_options = 0
-    success_rate_number_options_mu_h = 0
-    success_rate_mu_m_number_options = 0
-    success_rate_sig_m_number_options = 0
-    success_rate_sig_h_mu_h = 0
-    success_rate_mu_x_mu_h = 0
-    success_rate_sig_x_sig_h = 0
-    rate_of_choice_quorum_sig_m = 0
+# number_of_options = 10                      #   Number of options to choose best one from
+# mu_x = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
+# sigma_x = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
+# mu_h = 0                                    #   Mean of distribution from which units threshold are sampled randomly
+# sigma_h = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
+# mu_m = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
+# sigma_m = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
+# mu_assessment_err = 0.0                     #   Mean of distribution from which units quality assessment error are sampled randomly
+# sigma_assessment_err = 0.0                  #   Standard deviation of distribution from which units quality assessment error are sampled randomly
+# x_type = 3                                  #   Number of decimal places of quality stimulus
+# h_type = 3                                  #   Number of decimal places of units threshold
+# err_type = 0                                #   Number of decimal places of quality assessment error
 
 #%%
 
@@ -229,7 +228,6 @@ def bar(quor,opt_v,save_name,correct):
 
 #%%
 # Without assesment error Majority based decision
-
 if Without_assesment_error_Majority_based_decision==1:
     one_run()
 
