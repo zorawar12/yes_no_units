@@ -115,8 +115,6 @@ class Decision_making:
             result = 0
             return result,quorum_reached
 
-#%%
-
 class qualityControl:
     def __init__(self,number_of_options,x_type):
         self.mu_x = None

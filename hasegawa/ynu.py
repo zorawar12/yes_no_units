@@ -8,13 +8,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 if __name__ != "__main__":    
-    import src.classynu as yn
+    import hasegawa.classynu as yn
 else:
     import classynu as yn
 from multiprocessing import Pool
 from operator import itemgetter 
 
-#%%
+
 number_of_options = 10                      #   Number of options to choose best one from
 mu_x = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
 sigma_x = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
@@ -28,10 +28,10 @@ x_type = 3                                  #   Number of decimal places of qual
 h_type = 3                                  #   Number of decimal places of units threshold
 err_type = 0                                #   Number of decimal places of quality assessment error
 
-Without_assesment_error_Majority_based_decision = 1
+Without_assesment_error_Majority_based_decision = 0
 With_assesment_error_Majority_based_decision = 0
 random_choice_many_best_option = 0
-success_rate_sig_h_number_options = 0
+success_rate_sig_h_number_options = 1
 success_rate_mu_h_number_options = 0
 success_rate_number_options_mu_h = 0
 success_rate_mu_m_number_options = 0
@@ -53,8 +53,6 @@ rate_of_choice_quorum_sig_m = 0
 # x_type = 3                                  #   Number of decimal places of quality stimulus
 # h_type = 3                                  #   Number of decimal places of units threshold
 # err_type = 0                                #   Number of decimal places of quality assessment error
-
-#%%
 
 def units(mu_m,sigma_m,number_of_options):
     """
@@ -226,22 +224,18 @@ def bar(quor,opt_v,save_name,correct):
     plt.savefig(save_name,format = "pdf")
     plt.show()
 
-#%%
 # Without assesment error Majority based decision
 if Without_assesment_error_Majority_based_decision==1:
     one_run()
 
-#%%
 # With assessment error Majority based decision
 if With_assesment_error_Majority_based_decision==1:
     one_run(sigma_assessment_err=0.1)
 
-#%%
 # Random choice when more than one option's correct Majority based decision
 if random_choice_many_best_option==1:
     one_run(x_type=0,err_type=0)
 
-#%%
 # Majority based Rate of correct choice as a function of sigma_h for varying number of options
 if success_rate_sig_h_number_options==1:    
     sig_h = [0.0+i*0.01 for i in range(101)]
@@ -259,9 +253,8 @@ if success_rate_sig_h_number_options==1:
     opt_var = parallel(sighf,opts,sig_h)
 
     plt_show(data_len= opts,array= opt_var,var= "opt", plt_var="sigma",x_name='Sigma_h',\
-        title="Number of options",save_name="Sigma_h_vs_Rate_of_correct_choice.pdf")
+        title="Number of options",save_name="na.pdf")
 
-#%%
 # Majority based Rate of correct choice as a function of mu_h for varying number of options 
 if success_rate_mu_h_number_options==1:    
     m_h = [-4.0+i*0.08 for i in range(101)]
@@ -281,7 +274,6 @@ if success_rate_mu_h_number_options==1:
     plt_show(data_len= opts,array= opt_var,var= "opt", plt_var="mu",x_name='Mu_h',\
         title="Number of options",save_name="Mu_h_vs_Rate_of_correct_choice.pdf")
 
-#%%
 # Majority based Rate of correct choice as a function of number of options for varying mu_h 
 if success_rate_number_options_mu_h==1:    
     number_of_options = [i for i in range(1,51,1)]
@@ -301,7 +293,6 @@ if success_rate_number_options_mu_h==1:
     plt_show(data_len= mu_h,array= opt_var,var= "muh", plt_var="nop",x_name='number_of_options',\
         title="mu_h",save_name="number_of_options_vs_Rate_of_correct_choice.pdf")
 
-#%%
 # Majority based Rate of correct choice as a function of mu_m for varying number of options 
 if success_rate_mu_m_number_options==1:
     mu_m = [i for i in range(1,101,1)]
@@ -321,7 +312,6 @@ if success_rate_mu_m_number_options==1:
     plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='number_of_units(variance = 0)',\
         title="Number_of_options",save_name="number_of_units_vs_Rate_of_correct_choice.pdf")
 
-#%%
 # Majority based Rate of correct choice as a function of sigma_m for varying number of options
 if success_rate_sig_m_number_options==1:
     sigma_m = [1+i*0.03 for i in range(0,1000,1)]
@@ -341,7 +331,6 @@ if success_rate_sig_m_number_options==1:
     plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="sigm",x_name='number_of_units',\
         title="Number_of_options",save_name="sigma_m_vs_rate_of_correct_choice.pdf")
 
-#%%
 # Majority based Rate of correct choice as a function of sigma_h for varying mu_h
 if success_rate_sig_h_mu_h==1:
     sig_h = [np.round(0.0+i*0.01,decimals=2) for i in range(101)]
@@ -361,7 +350,6 @@ if success_rate_sig_h_mu_h==1:
     graphic_plt(a= mu_h,b=sig_h ,array= opt_var,x_name='Sigma_h',y_name="Mu_h",title="Number_of_options = 10",\
         save_name="mu_h_vs_sigma_h.pdf")
 
-# %%
 # Majority based Rate of correct choice as a function of mu_x for varying mu_h
 if success_rate_mu_x_mu_h==1:
     mu_x = [np.round(-4.0+i*0.08,decimals=2) for i in range(101)]
@@ -381,7 +369,6 @@ if success_rate_mu_x_mu_h==1:
     graphic_plt(a= mu_h,b=mu_x ,array= opt_var,x_name='Mu_x',y_name="Mu_h",title="Number_of_options = 10",\
         save_name="mu_h_vs_mu_x.pdf")
 
-# %%
 # Majority based Rate of correct choice as a function of sigma_x for varying sigma_h
 if success_rate_sig_x_sig_h==1:
     sig_x = [np.round(i*0.04,decimals=2) for i in range(101)]
@@ -401,7 +388,6 @@ if success_rate_sig_x_sig_h==1:
     graphic_plt(a= sig_h,b=sig_x ,array= opt_var,x_name='Sigma_x',y_name="Sigma_h",title="Number_of_options = 10",\
         save_name="sig_h_vs_sig_x.pdf")
 
-# %%
 # Majority based Rate of choice as a function of quorum for varying sigma_m
 if rate_of_choice_quorum_sig_m==1:
     quorum = [i for i in range(1,101,1)]
@@ -436,5 +422,4 @@ if rate_of_choice_quorum_sig_m==1:
     for i in range(len(save_name)):
         bar(quorum,opt_v[str(sig_m[i])],save_name[i],"maj")
 
-# %%
 # Decoy effect in individual decision and collective decision

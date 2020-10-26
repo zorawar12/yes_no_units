@@ -6,9 +6,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 if __name__ != "__main__":    
-    import src.classynu as yn
+    import src.classexploration as yn
 else:
-    import classynu as yn
+    import classexploration as yn
 from multiprocessing import Pool
 from operator import itemgetter 
 
@@ -28,9 +28,6 @@ x_type = 3                                  #   Number of decimal places of qual
 h_type = 3                                  #   Number of decimal places of units threshold
 err_type = 0                                #   Number of decimal places of quality assessment error
 
-#%%
-if __name__ == "__main__":
-    success_rate_sig_h_number_options = 1
 #%%
 
 def units(mu_m,sigma_m,number_of_options):
@@ -183,21 +180,20 @@ def bar(quor,opt_v,save_name,correct):
 #%%
 
 # Majority based Rate of correct choice as a function of sigma_h for varying number of options
-if success_rate_sig_h_number_options==1:    
-    sig_h = [0.0+i*0.01 for i in range(101)]
-    opts = [2,10]#2*i for i in range(2,6,3)]
+sig_h = [0.0+i*0.01 for i in range(101)]
+opts = [2,10]#2*i for i in range(2,6,3)]
 
-    def sighf(op,sigh):
-        count = 0
-        for k in range(1000):
-            success = multi_run_no(sigma_h=sigh,number_of_options=op,err_type=0) 
-            if success == 1:
-                count += 1
-        opt_va = {"opt":op,"sigma": sigh, "success_rate":count/1000}
-        return opt_va
+def sighf(op,sigh):
+    count = 0
+    for k in range(1000):
+        success = multi_run_no(sigma_h=sigh,number_of_options=op,err_type=0) 
+        if success == 1:
+            count += 1
+    opt_va = {"opt":op,"sigma": sigh, "success_rate":count/1000}
+    return opt_va
 
-    opt_var = parallel(sighf,opts,sig_h)
+opt_var = parallel(sighf,opts,sig_h)
 
-    plt_show(data_len= opts,array= opt_var,var= "opt", plt_var="sigma",x_name='Sigma_h',\
-        title="Number of options",save_name="Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
+plt_show(data_len= opts,array= opt_var,var= "opt", plt_var="sigma",x_name='Sigma_h',\
+    title="Number of options",save_name="Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
 
