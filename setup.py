@@ -8,6 +8,7 @@ setup(
     install_requires=[
         'numpy==1.15',
         'matplotlib>=3.0.3'
+        'statsmodels==0.9.0'
     ],
     python_requires='==3.5.6',
 )

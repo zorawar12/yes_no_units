@@ -8,6 +8,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from statsmodels.stats.proportion import proportions_ztest as pt
 
 #%%
 
@@ -21,25 +22,27 @@ class Decision_making:
         self.votes = None
         self.no_votes = None
         self.no_proportion = None
+        self.yes_stats = []
+        self.max_ratio_pvalue = None
 
     def vote_counter(self,assigned_units,Dx):
         """
         Each unit provides its decision and votes are counted for each options 
         """
-        votes = [0 for i in range(self.number_of_options)]
+        votes = [1 for i in range(self.number_of_options)]
         for i in range(self.number_of_options):
             assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
             for j in range(len(assigned_units[i])):
                 if (assigned_units[i][j] < (Dx[i] + assesment_error[j])):
                     votes[i] += 1
         self.votes = votes
-          
-    def for_against_vote_counter(self,assigned_units,Dx):
+            
+    def for_against_vote_counter(self,assigned_units,Dx,pc):
         """
         Each unit provides its decision and votes are counted for each options 
         """
-        votes = [0 for i in range(self.number_of_options)]
-        no_votes = [0 for i in range(self.number_of_options)]
+        votes = [1 for i in range(self.number_of_options)]
+        no_votes = [1 for i in range(self.number_of_options)]
         for i in range(self.number_of_options):
             assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
             for j in range(len(assigned_units[i])):
@@ -49,7 +52,27 @@ class Decision_making:
                     no_votes[i] += 1
         self.votes = votes
         self.no_votes = no_votes
-        self.no_proportion = [votes[i]/(1+no_votes[i]) for i in range(len(no_votes))]
+        # print([len(i) for i in assigned_units])
+        self.no_proportion = [no_votes[i]/pc[i] for i in range(self.number_of_options)]
+        self.hypothesis_testing(pc)
+        self.max_ratio_pvalue = self.hypothesis_testing_top_two(pc)
+
+    def hypothesis_testing(self,pc):
+        for i in range(self.number_of_options-1):
+            self.yes_stats.append([])
+            for j in range(i+1,self.number_of_options):
+                self.yes_stats[i].append(pt([(self.votes[i])/(self.no_votes[i]),(self.votes[j])/(self.no_votes[j]+1)],[pc[i],pc[j]]))
+
+    def hypothesis_testing_top_two(self,pc):
+        ratios = []
+        for j in range(self.number_of_options):
+            ratios.append(self.votes[j]/self.no_votes[j])
+        max_1 = [max(ratios),ratios.index(max(ratios))]
+        ratios[max_1[1]] = 0
+        max_2 = [max(ratios),ratios.index(max(ratios))]
+        pvalue = pt([max_1[0],max_2[0]],[pc[max_1[1]],pc[max_2[1]]])
+        return pvalue
+
 
     def best_among_bests_no(self,ref_highest_quality):
         """
@@ -63,7 +86,7 @@ class Decision_making:
         #         break
         # if best_opt == None:
         #     best_opt = np.random.randint(0,len(available_opt))
-        if self.no_proportion.index(max(self.no_proportion)) ==  ref_highest_quality:
+        if self.no_proportion.index(min(self.no_proportion)) ==  ref_highest_quality:
             return 1
         else:
             return 0
