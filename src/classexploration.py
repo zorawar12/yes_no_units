@@ -24,6 +24,7 @@ class Decision_making:
         self.no_proportion = None
         self.yes_stats = []
         self.max_ratio_pvalue = None
+        self.y_ratios = []
 
     def vote_counter(self,assigned_units,Dx):
         """
@@ -65,15 +66,15 @@ class Decision_making:
                 self.yes_stats[i].append(pt([self.votes[i],self.votes[j]],[pc[i],pc[j]]))
 
     def hypothesis_testing_top_two(self,pc):
-        ratios = []
         for j in range(self.number_of_options):
-            ratios.append(self.votes[j]/pc[j])
-        # print(ratios)
-        max_1 = [max(ratios),ratios.index(max(ratios))]
-        ratios[max_1[1]] = 0
-        max_2 = [max(ratios),ratios.index(max(ratios))]
+            self.y_ratios.append(self.votes[j]/pc[j])
+        # print(self.y_ratios)
+        max_1 = [max(self.y_ratios),self.y_ratios.index(max(self.y_ratios))]
+        self.y_ratios[max_1[1]] = 0
+        max_2 = [max(self.y_ratios),self.y_ratios.index(max(self.y_ratios))]
         # print([max_1,max_2])
         pvalue = pt([self.votes[max_1[1]],self.votes[max_2[1]]],[pc[max_1[1]],pc[max_2[1]]])
+
         return pvalue
 
     def best_among_bests_no(self,ref_highest_quality):
@@ -165,3 +166,31 @@ class qualityControl:
         self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
 
 
+class Qranking:
+    def __init__(self,number_of_options):
+        self.n = number_of_options
+        self.ref_rank = np.zeros((self.n,self.n))
+        self.exp_rank = np.zeros((self.n,self.n))
+
+    def ref_ranking(self,oq,y_ratios,no_votes):
+        for i in range(len(oq)):
+            for j in range(i+1,self.n):
+                if oq[i]>oq[j]:
+                    self.ref_rank[i,j] = 1
+                if y_ratios[i]>y_ratios[j] and no_votes[i]<no_votes[j]:
+                    self.exp_rank[i,j] = 1
+                elif y_ratios[i]<y_ratios[j] and no_votes[i]>no_votes[j]:
+                    self.exp_rank[i,j] = 0
+                elif y_ratios[i]<y_ratios[j] and no_votes[i]<no_votes[j]:
+                    self.exp_rank[i,j] = 0.5
+                elif y_ratios[i]>y_ratios[j] and no_votes[i]>no_votes[j]:
+                    self.exp_rank[i,j] = 0.5
+
+    def incorrectness_cost(self):
+        measure_of_incorrectness = 0
+        for i in range(self.n):
+            for j in range(i+1,self.n):
+                measure_of_incorrectness += abs(self.exp_rank[i,j]-self.ref_rank[i,j])
+        measure_of_incorrectness = 2*measure_of_incorrectness/(self.n*(self.n - 1))
+        return measure_of_incorrectness           #   Higher measure of incorrectness more bad is the ranking by units votes 
+# %%
