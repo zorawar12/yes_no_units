@@ -29,7 +29,7 @@ class Decision_making:
         """
         Each unit provides its decision and votes are counted for each options 
         """
-        votes = [1 for i in range(self.number_of_options)]
+        votes = [0 for i in range(self.number_of_options)]
         for i in range(self.number_of_options):
             assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
             for j in range(len(assigned_units[i])):
@@ -41,8 +41,8 @@ class Decision_making:
         """
         Each unit provides its decision and votes are counted for each options 
         """
-        votes = [1 for i in range(self.number_of_options)]
-        no_votes = [1 for i in range(self.number_of_options)]
+        votes = [0 for i in range(self.number_of_options)]
+        no_votes = [0 for i in range(self.number_of_options)]
         for i in range(self.number_of_options):
             assesment_error = np.round(np.random.normal(self.mu_assessment_err,self.sigma_assessment_err,len(assigned_units[i])),decimals= self.err_type)
             for j in range(len(assigned_units[i])):
@@ -50,6 +50,7 @@ class Decision_making:
                     votes[i] += 1
                 else:
                     no_votes[i] += 1
+
         self.votes = votes
         self.no_votes = no_votes
         # print([len(i) for i in assigned_units])
@@ -61,18 +62,19 @@ class Decision_making:
         for i in range(self.number_of_options-1):
             self.yes_stats.append([])
             for j in range(i+1,self.number_of_options):
-                self.yes_stats[i].append(pt([(self.votes[i])/(self.no_votes[i]),(self.votes[j])/(self.no_votes[j]+1)],[pc[i],pc[j]]))
+                self.yes_stats[i].append(pt([self.votes[i],self.votes[j]],[pc[i],pc[j]]))
 
     def hypothesis_testing_top_two(self,pc):
         ratios = []
         for j in range(self.number_of_options):
-            ratios.append(self.votes[j]/self.no_votes[j])
+            ratios.append(self.votes[j]/pc[j])
+        # print(ratios)
         max_1 = [max(ratios),ratios.index(max(ratios))]
         ratios[max_1[1]] = 0
         max_2 = [max(ratios),ratios.index(max(ratios))]
-        pvalue = pt([max_1[0],max_2[0]],[pc[max_1[1]],pc[max_2[1]]])
+        # print([max_1,max_2])
+        pvalue = pt([self.votes[max_1[1]],self.votes[max_2[1]]],[pc[max_1[1]],pc[max_2[1]]])
         return pvalue
-
 
     def best_among_bests_no(self,ref_highest_quality):
         """
@@ -159,6 +161,7 @@ class qualityControl:
         """
         Provides distribution of quality stimulus for each option upto specified decimal places
         """        
-        self.Dx = np.sort(np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type))
-        # self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
+        # self.Dx = np.sort(np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type))
+        self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
+
 

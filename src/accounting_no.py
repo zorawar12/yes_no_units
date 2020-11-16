@@ -31,6 +31,7 @@ err_type = 0                                #   Number of decimal places of qual
 
 success_rate_mu_m_number_options = 1
 
+
 def units(mu_m,sigma_m,number_of_options):
     """
     Arguments:
@@ -42,6 +43,7 @@ def units(mu_m,sigma_m,number_of_options):
     a = np.array(abs(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0)))
     while a.any()==0.:
         a = np.array(abs(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0)))
+    # print(a)
     return a
 
 def threshold(m_units,h_type,mu_h,sigma_h):
@@ -122,8 +124,7 @@ def main_process_flow(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigm
 
     dec = decision_make_check(number_of_options=number_of_options,Dx = qc.Dx,assigned_units= units_distribution,\
         err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,\
-        ref_highest_quality=qc.ref_highest_quality,quorum=quorum,pc = pc)  
-
+        ref_highest_quality=qc.ref_highest_quality,quorum=quorum,pc = pc)
     return dec
 
 def plt_show(data_len,array,var,plt_var,x_name,title,save_name,y_var):
@@ -153,11 +154,13 @@ def parallel(func,a,b):
 
     opt_var = []
 
-    with Pool(20) as p:
-        opt_var = p.starmap(func,inp)
+    for i in inp:
+        opt_var.append(func(i[0],i[1]))
+
+    # with Pool(8) as p:
+    #     opt_var = p.starmap(func,inp)
     
     return opt_var
-
 
 if __name__ != "__main__":
     # Majority based Rate of correct choice as a function of sigma_h for varying number of options
@@ -179,7 +182,7 @@ if __name__ != "__main__":
         title="Number of options",save_name="Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
 
 if success_rate_mu_m_number_options==1:
-    mu_m = [i for i in range(50,151,1)]
+    mu_m = [i for i in range(50,10000,200)]
     number_of_options = [5,10]
 
     def mumf(nop,mum):
@@ -188,8 +191,8 @@ if success_rate_mu_m_number_options==1:
         for k in range(2000):
             success ,yes_test,max_rat_pval = main_process_flow(mu_m=mum,number_of_options=nop,err_type=0)
             # print(max_rat_pval)
-            if max_rat_pval[1] != 'nan' or 'inf':
-                sum_pval += max_rat_pval[1]
+            # if max_rat_pval[1] != 'nan' or 'inf':
+            sum_pval += max_rat_pval[1]
             # max_p=[[max(i[0]),i.index(max(i[0])),yes_test.index(i)] for i in yes_test]
             # print(max_p)
             # max_p_overall = max(max_p)
@@ -199,6 +202,8 @@ if success_rate_mu_m_number_options==1:
         return {"nop":nop,"mum": mum, "success_rate":count/2000,'avg_pval':avg_pval}
 
     opt_var = parallel(mumf,number_of_options,mu_m)
+    # print(opt_var)
 
     plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
         title="Number_of_options",save_name="number_of_units_vs_pvalue.pdf",y_var="avg_pval")
+
