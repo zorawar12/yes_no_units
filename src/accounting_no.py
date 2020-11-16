@@ -105,6 +105,7 @@ def decision_make_check(number_of_options,Dx,assigned_units,err_type,mu_assessme
     qrincorrectness = yn.Qranking(number_of_options)
     qrincorrectness.ref_ranking(Dx,DM.y_ratios,DM.no_votes)
     incorrectness = qrincorrectness.incorrectness_cost()
+
     if quorum == None:
         # plt.scatter(Dx,DM.votes)
         # plt.show()
@@ -132,7 +133,7 @@ def main_process_flow(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigm
     return dec
 
 
-def plt_show(data_len,array,var,plt_var,x_name,title,save_name,y_var):
+def plt_show(data_len,array,var,plt_var,x_name,y_name,title,save_name,y_var):
     c = ["blue","green","red","purple","brown"]
     count = 0
     fig = plt.figure()
@@ -146,7 +147,7 @@ def plt_show(data_len,array,var,plt_var,x_name,title,save_name,y_var):
         count += 1
     plt.ylim(top = 1,bottom = -0.2)
     plt.xlabel(x_name)
-    plt.ylabel('P-Values')
+    plt.ylabel(y_name)
     plt.legend(data_len,markerscale = 5, title = title)
     plt.savefig(save_name,format = "pdf")
     plt.show()
@@ -159,11 +160,11 @@ def parallel(func,a,b):
 
     opt_var = []
 
-    for i in inp:
-        opt_var.append(func(i[0],i[1]))
+    #for i in inp:
+    #    opt_var.append(func(i[0],i[1]))
 
-    # with Pool(8) as p:
-    #     opt_var = p.starmap(func,inp)
+    with Pool(20) as p:
+        opt_var = p.starmap(func,inp)
     
     return opt_var
 
@@ -187,8 +188,8 @@ if __name__ != "__main__":
         title="Number of options",save_name="Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
 
 if success_rate_mu_m_number_options==1:
-    mu_m = [i for i in range(50,10000,200)]
-    number_of_options = [5,10]
+    mu_m = [i for i in range(50,2000,20)]
+    number_of_options = [2,5,10,20]
 
     def mumf(nop,mum):
         count = 0
@@ -213,7 +214,7 @@ if success_rate_mu_m_number_options==1:
     # print(opt_var)
 
     plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
-        title="Number_of_options",save_name="number_of_units_vs_pvalue.pdf",y_var="avg_pval")
+        y_name = "P-values",title="Number_of_options",save_name="number_of_units_vs_pvalue.pdf",y_var="avg_pval")
 
     plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
-        title="Number_of_options",save_name="number_of_units_vs_pvalue.pdf",y_var="avg_incrt")
+        y_name = "Measure_of_incorrectness",title="Number_of_options",save_name="number_of_units_vs_measure_of_incorrectness.pdf",y_var="avg_incrt")

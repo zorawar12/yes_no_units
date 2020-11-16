@@ -75,6 +75,7 @@ class Decision_making:
         self.y_ratios[max_1[1]] = max_1[0]
         # print([max_1,max_2])
         pvalue = pt([self.votes[max_1[1]],self.votes[max_2[1]]],[pc[max_1[1]],pc[max_2[1]]])
+
         return pvalue
 
     def best_among_bests_no(self,ref_highest_quality):
@@ -173,7 +174,7 @@ class Qranking:
         self.exp_rank = np.zeros((self.n,self.n))
 
     def ref_ranking(self,oq,y_ratios,no_votes):
-        for i in range(self.n):
+        for i in range(len(oq)):
             for j in range(i+1,self.n):
                 if oq[i]>oq[j]:
                     self.ref_rank[i,j] = 1
