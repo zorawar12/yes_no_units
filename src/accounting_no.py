@@ -103,9 +103,8 @@ def decision_make_check(number_of_options,Dx,assigned_units,err_type,mu_assessme
     DM.for_against_vote_counter(assigned_units,Dx,pc)
     majority_dec = DM.best_among_bests_no(ref_highest_quality)
     qrincorrectness = yn.Qranking(number_of_options)
-    qrincorrectness.ref_rank(Dx,DM.y_ratios,DM.no_votes)
+    qrincorrectness.ref_ranking(Dx,DM.y_ratios,DM.no_votes)
     incorrectness = qrincorrectness.incorrectness_cost()
-
     if quorum == None:
         # plt.scatter(Dx,DM.votes)
         # plt.show()
