@@ -104,12 +104,13 @@ def decision_make_check(number_of_options,Dx,assigned_units,err_type,mu_assessme
     majority_dec = DM.best_among_bests_no(ref_highest_quality)
     qrincorrectness = yn.Qranking(number_of_options)
     qrincorrectness.ref_ranking(Dx,DM.y_ratios,DM.no_votes)
-    incorrectness = qrincorrectness.incorrectness_cost()
-
+    incorrectness = qrincorrectness.incorrectness_cost(qrincorrectness.exp_rank)
+    qrincorrectness.ref_ranking_w_n(Dx,DM.y_ratios,DM.no_votes)
+    incorrectness_w_n = qrincorrectness.incorrectness_cost(qrincorrectness.exp_rank_w_n)
     if quorum == None:
         # plt.scatter(Dx,DM.votes)
         # plt.show()
-        return majority_dec,DM.yes_stats,DM.max_ratio_pvalue,incorrectness
+        return majority_dec,DM.yes_stats,DM.max_ratio_pvalue,incorrectness,incorrectness_w_n
     else:
         result,quorum_reached = DM.quorum_voting(assigned_units,Dx,ref_highest_quality)
         return result,quorum_reached,majority_dec
@@ -134,7 +135,7 @@ def main_process_flow(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigm
 
 
 def plt_show(data_len,array,var,plt_var,x_name,y_name,title,save_name,y_var):
-    c = ["blue","green","red","purple","brown"]
+    c = ["blue","green","red","purple","brown","yellow","black","orange","pink"]
     count = 0
     fig = plt.figure()
     data = [[] for i in range(len(data_len))]
@@ -143,8 +144,9 @@ def plt_show(data_len,array,var,plt_var,x_name,y_name,title,save_name,y_var):
         data[data_len.index(i[var])].append(i)
 
     for i in data:
-        plt.scatter(list(map(itemgetter(plt_var), i)),list(map(itemgetter(y_var), i)),c = c[count],s=10)    
-        count += 1
+        for j in y_var:
+            plt.scatter(list(map(itemgetter(plt_var), i)),list(map(itemgetter(j), i)),c = c[count],s=10)    
+            count += 1
     plt.ylim(top = 1,bottom = -0.2)
     plt.xlabel(x_name)
     plt.ylabel(y_name)
@@ -163,7 +165,7 @@ def parallel(func,a,b):
     #for i in inp:
     #    opt_var.append(func(i[0],i[1]))
 
-    with Pool(8) as p:
+    with Pool(20) as p:
         opt_var = p.starmap(func,inp)
     
     return opt_var
@@ -195,12 +197,14 @@ if success_rate_mu_m_number_options==1:
         count = 0
         sum_pval = 0
         avg_incrtness = 0
+        avg_incrtness_w_n = 0
         for k in range(2000):
-            success ,yes_test,max_rat_pval,incrt = main_process_flow(mu_m=mum,number_of_options=nop,err_type=0)
+            success ,yes_test,max_rat_pval,incrt,incrt_w_n = main_process_flow(mu_m=mum,number_of_options=nop,err_type=0)
             # print(max_rat_pval)
             # if max_rat_pval[1] != 'nan' or 'inf':
             sum_pval += max_rat_pval[1]
             avg_incrtness += incrt
+            avg_incrtness_w_n += incrt_w_n
             # max_p=[[max(i[0]),i.index(max(i[0])),yes_test.index(i)] for i in yes_test]
             # print(max_p)
             # max_p_overall = max(max_p)
@@ -208,13 +212,14 @@ if success_rate_mu_m_number_options==1:
                 count += 1
         avg_pval = sum_pval/2000
         avg_incrtness = avg_incrtness/2000
-        return {"nop":nop,"mum": mum, "success_rate":count/2000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness}
+        avg_incrtness_w_n = avg_incrtness_w_n/2000
+        return {"nop":nop,"mum": mum, "success_rate":count/2000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n}
 
     opt_var = parallel(mumf,number_of_options,mu_m)
     # print(opt_var)
 
     plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
-        y_name = "P-values",title="Number_of_options",save_name="number_of_units_vs_pvalue.pdf",y_var="avg_pval")
+        y_name = "P-values",title="Number_of_options",save_name="number_of_units_vs_pvalue.pdf",y_var=["avg_pval"])
 
     plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
-        y_name = "Measure_of_incorrectness",title="Number_of_options",save_name="number_of_units_vs_measure_of_incorrectness.pdf",y_var="avg_incrt")
+        y_name = "Measure_of_incorrectness",title="Number_of_options",save_name="number_of_units_vs_measure_of_incorrectness.pdf",y_var=["avg_incrt",'avg_incrt_w_n'])

@@ -172,6 +172,7 @@ class Qranking:
         self.n = number_of_options
         self.ref_rank = np.zeros((self.n,self.n))
         self.exp_rank = np.zeros((self.n,self.n))
+        self.exp_rank_w_n = np.zeros((self.n,self.n))
 
     def ref_ranking(self,oq,y_ratios,no_votes):
         for i in range(len(oq)):
@@ -186,12 +187,22 @@ class Qranking:
                     self.exp_rank[i,j] = 0.5
                 elif y_ratios[i]>y_ratios[j] and no_votes[i]>no_votes[j]:
                     self.exp_rank[i,j] = 0.5
+    
+    def ref_ranking_w_n(self,oq,y_ratios,no_votes):
+        for i in range(len(oq)):
+            for j in range(i+1,self.n):
+                if y_ratios[i]>y_ratios[j]:
+                    self.exp_rank_w_n[i,j] = 1
+                elif y_ratios[i]<y_ratios[j]:
+                    self.exp_rank_w_n[i,j] = 0
+                else:
+                    self.exp_rank_w_n[i,j] = 0.5
 
-    def incorrectness_cost(self):
+    def incorrectness_cost(self,exp_rank):
         measure_of_incorrectness = 0
         for i in range(self.n):
             for j in range(i+1,self.n):
-                measure_of_incorrectness += abs(self.exp_rank[i,j]-self.ref_rank[i,j])
+                measure_of_incorrectness += abs(exp_rank[i,j]-self.ref_rank[i,j])
         measure_of_incorrectness = 2*measure_of_incorrectness/(self.n*(self.n - 1))
         return measure_of_incorrectness           #   Higher measure of incorrectness more bad is the ranking by units votes 
 # %%
