@@ -163,7 +163,7 @@ def parallel(func,a,b):
     #for i in inp:
     #    opt_var.append(func(i[0],i[1]))
 
-    with Pool(20) as p:
+    with Pool(8) as p:
         opt_var = p.starmap(func,inp)
     
     return opt_var
