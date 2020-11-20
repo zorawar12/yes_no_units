@@ -134,7 +134,7 @@ def main_process_flow(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigm
     return dec
 
 
-def plt_show(data_len,array,var,plt_var,x_name,y_name,title,save_name,y_var):
+def plt_show(data_len,array,var,plt_var,x_name,y_name,title,save_name,y_var,data_legend):
     c = ["blue","green","red","purple","brown","yellow","black","orange","pink"]
     count = 0
     fig = plt.figure()
@@ -147,7 +147,7 @@ def plt_show(data_len,array,var,plt_var,x_name,y_name,title,save_name,y_var):
         for i in data:
             plt.scatter(list(map(itemgetter(plt_var), i)),list(map(itemgetter(j), i)),c = c[count],s=10)    
             count += 1
-        plt.legend(data_len,markerscale = 1, title = title)
+    plt.legend(data_legend,markerscale = 1, title = title)
     plt.ylim(top = 0.3,bottom = -0.1)
     plt.xlabel(x_name)
     plt.ylabel(y_name)
@@ -218,8 +218,8 @@ if success_rate_mu_m_number_options==1:
     opt_var = parallel(mumf,number_of_options,mu_m)
     # print(opt_var)
 
-    plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
+    plt_show(data_len= number_of_options,data_legend = number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
         y_name = "P-values",title="Number_of_options",save_name="number_of_units_vs_pvalue.pdf",y_var=["avg_pval"])
 
-    plt_show(data_len= number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
+    plt_show(data_len= number_of_options,data_legend = number_of_options + number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
         y_name = "Measure_of_incorrectness",title="Number_of_options",save_name="number_of_units_vs_measure_of_incorrectness.pdf",y_var=["avg_incrt",'avg_incrt_w_n'])
