@@ -143,14 +143,14 @@ def plt_show(data_len,array,var,plt_var,x_name,y_name,title,save_name,y_var):
     for i in array:
         data[data_len.index(i[var])].append(i)
 
-    for i in data:
-        for j in y_var:
+    for j in y_var:
+        for i in data:
             plt.scatter(list(map(itemgetter(plt_var), i)),list(map(itemgetter(j), i)),c = c[count],s=10)    
-        count += 1
+            count += 1
+        plt.legend(data_len,markerscale = 1, title = title)
     plt.ylim(top = 0.3,bottom = -0.1)
     plt.xlabel(x_name)
     plt.ylabel(y_name)
-    plt.legend(data_len,markerscale = 1, title = title)
     plt.savefig(save_name,format = "pdf")
     plt.show()
 
