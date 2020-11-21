@@ -21,7 +21,7 @@ sigma_x = 1.0                               #   Standard deviation of distributi
 mu_h = 0                                    #   Mean of distribution from which units threshold are sampled randomly
 sigma_h = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
 mu_m = 150                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
-sigma_m = 10                                #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
+sigma_m = 150                                #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
 mu_assessment_err = 0.0                     #   Mean of distribution from which units quality assessment error are sampled randomly
 sigma_assessment_err = 0.0                  #   Standard deviation of distribution from which units quality assessment error are sampled randomly
 x_type = 3                                  #   Number of decimal places of quality stimulus
@@ -136,8 +136,10 @@ def main_process_flow(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigm
 
 def plt_show(data_len,array,var,plt_var,x_name,y_name,title,save_name,y_var,data_legend):
     c = ["blue","green","red","purple","brown","yellow","black","orange","pink"]
+    line_style = ["-","--",":","-."]
     count = 0
-    fig = plt.figure()
+    fig = plt.figure(figsize=(15, 8), dpi= 90, facecolor='w', edgecolor='k')
+    plt.style.use('ggplot')
     data = [[] for i in range(len(data_len))]
 
     for i in array:
@@ -145,7 +147,8 @@ def plt_show(data_len,array,var,plt_var,x_name,y_name,title,save_name,y_var,data
 
     for j in y_var:
         for i in data:
-            plt.scatter(list(map(itemgetter(plt_var), i)),list(map(itemgetter(j), i)),c = c[count],s=10)    
+            plt.plot(list(map(itemgetter(plt_var), i)),list(map(itemgetter(j), i))\
+            ,c = c[count%len(c)],ls = line_style[count%len(line_style)])    
             count += 1
     plt.legend(data_legend,markerscale = 1, title = title)
     plt.ylim(top = 0.3,bottom = -0.1)
@@ -190,7 +193,7 @@ if __name__ != "__main__":
         title="Number of options",save_name="Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
 
 if success_rate_mu_m_number_options==1:
-    mu_m = [i for i in range(50,2000,20)]
+    mu_m = [i for i in range(500,2000,20)]
     number_of_options = [2,5,10,20]
 
     def mumf(nop,mum):
@@ -218,8 +221,8 @@ if success_rate_mu_m_number_options==1:
     opt_var = parallel(mumf,number_of_options,mu_m)
     # print(opt_var)
 
-    plt_show(data_len= number_of_options,data_legend = number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
+    plt_show(data_len= number_of_options,data_legend = number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 150)',\
         y_name = "P-values",title="Number_of_options",save_name="number_of_units_vs_pvalue.pdf",y_var=["avg_pval"])
 
-    plt_show(data_len= number_of_options,data_legend = number_of_options + number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 10)',\
+    plt_show(data_len= number_of_options,data_legend = number_of_options + number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 150)',\
         y_name = "Measure_of_incorrectness",title="Number_of_options",save_name="number_of_units_vs_measure_of_incorrectness.pdf",y_var=["avg_incrt",'avg_incrt_w_n'])
