@@ -5,7 +5,7 @@
 
 #%%
 import matplotlib
-#matplotlib.use('TKAgg')
+matplotlib.use('TKAgg')
 import numpy as np
 import matplotlib.pyplot as plt
 if __name__ != "__main__":    
@@ -21,7 +21,7 @@ mu_x = 0.0                                  #   Mean of distribution from which 
 sigma_x = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
 mu_h = 0                                    #   Mean of distribution from which units threshold are sampled randomly
 sigma_h = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
-mu_m = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
+mu_m = 150                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
 sigma_m = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
 mu_assessment_err = 0.0                     #   Mean of distribution from which units quality assessment error are sampled randomly
 sigma_assessment_err = 0.0                  #   Standard deviation of distribution from which units quality assessment error are sampled randomly

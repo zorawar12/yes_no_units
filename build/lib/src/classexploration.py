@@ -54,6 +54,7 @@ class Decision_making:
 
         self.votes = votes
         self.no_votes = no_votes
+        # print([len(i) for i in assigned_units])
         self.no_proportion = [no_votes[i]/pc[i] for i in range(self.number_of_options)]
         self.hypothesis_testing(pc)
         self.max_ratio_pvalue = self.hypothesis_testing_top_two(pc)
@@ -67,10 +68,12 @@ class Decision_making:
     def hypothesis_testing_top_two(self,pc):
         for j in range(self.number_of_options):
             self.y_ratios.append(self.votes[j]/pc[j])
+        # print(self.y_ratios)
         max_1 = [max(self.y_ratios),self.y_ratios.index(max(self.y_ratios))]
         self.y_ratios[max_1[1]] = 0
         max_2 = [max(self.y_ratios),self.y_ratios.index(max(self.y_ratios))]
         self.y_ratios[max_1[1]] = max_1[0]
+        # print([max_1,max_2])
         pvalue = pt([self.votes[max_1[1]],self.votes[max_2[1]]],[pc[max_1[1]],pc[max_2[1]]])
 
         return pvalue

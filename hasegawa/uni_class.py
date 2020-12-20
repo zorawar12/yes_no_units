@@ -79,12 +79,11 @@ class Decision_making:
             result = 0
             return result,quorum_reached
 
-#%%
 
 class qualityControl:
     def __init__(self,number_of_options,x_type):
-        self.mu_x = None
-        self.sigma_x = None
+        self.low_x = None
+        self.high_x = None
         self.Dx = None
         self.x_type = x_type
         self.number_of_options = number_of_options
@@ -101,7 +100,6 @@ class qualityControl:
     def dx(self):
         """
         Provides distribution of quality stimulus for each option upto specified decimal places
-        """        
-        self.Dx = np.sort(np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type))
-        #self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
+        """
+        self.Dx = np.round(np.random.uniform(low=self.low_x,high = self.high_x,size=self.number_of_options),decimals=self.x_type)
 
