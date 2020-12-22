@@ -5,12 +5,12 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-if __name__ != "__main__":    
+if __name__ != "__main__":
     import src.classexploration as yn
 else:
     import classexploration as yn
 from multiprocessing import Pool
-from operator import itemgetter 
+from operator import itemgetter
 
 
 # Accounting for no units along with yes units
@@ -30,7 +30,8 @@ err_type = 0                                #   Number of decimal places of qual
 confidence = 0.02                           #   Confidence for distinguishing qualities
 
 wrong_ranking_cost_graphics = 1
-not_considering_no_in_ranking = 0
+not_considering_no_in_ranking = 1
+not_considering_no_in_ranking_sigma =0
 
 def units(mu_m,sigma_m,number_of_options):
     """
@@ -135,7 +136,7 @@ def main_process_flow(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigm
 def graphic_plt(a,b,zvar,array,x_name,y_name,title,save_name,bar_label):
     fig, ax = plt.subplots()
     z = np.array(list(map(itemgetter(zvar), array))).reshape(len(a),len(b))
-    cs = ax.contourf(b,a,z)   
+    cs = ax.contourf(b,a,z)
     cbar = fig.colorbar(cs)
     plt.xlabel(x_name)
     plt.ylabel(y_name)
@@ -159,7 +160,7 @@ def plt_show(data_len,array,var,plt_var,x_name,y_name,title,save_name,y_var,data
     for j in y_var:
         for i in data:
             plt.plot(list(map(itemgetter(plt_var), i)),list(map(itemgetter(j), i))\
-            ,c = c[count%len(c)],ls = line_style[count%len(line_style)])    
+            ,c = c[count%len(c)],ls = line_style[count%len(line_style)])
             count += 1
     plt.legend(data_legend,markerscale = 1, title = title)
     plt.ylim(top = 0.3,bottom = -0.1)
@@ -181,8 +182,26 @@ def parallel(func,a,b):
 
     with Pool(20) as p:
         opt_var = p.starmap(func,inp)
-    
+
     return opt_var
+
+def parallel3(func,a,b,c):
+    inp = []
+    for i in a:
+        for j in b:
+            for k in c:
+                inp.append((i,j,k))
+
+    opt_var = []
+
+    #for i in inp:
+    #    opt_var.append(func(i[0],i[1]))
+
+    with Pool(20) as p:
+        opt_var = p.starmap(func,inp)
+
+    return opt_var
+
 
 if __name__ != "__main__":
     # Majority based Rate of correct choice as a function of sigma_h for varying number of options
@@ -205,7 +224,7 @@ if __name__ != "__main__":
 
 if wrong_ranking_cost_graphics==1:
     mu_m = [i for i in range(500,2000,100)]
-    sigma_m = [i for i in range(0,100,4)]
+    sigma_m = [i for i in range(0,200,5)]
     number_of_options = 10
 
     def mumf(sigm,mum):
@@ -219,7 +238,7 @@ if wrong_ranking_cost_graphics==1:
             sum_pval += max_rat_pval[1]
             avg_incrtness += incrt
             avg_incrtness_w_n += incrt_w_n
-            if incrt_w_n != 0:
+            if incrt_w_n == 0:
                 avg_correct_ranking +=1
             if success == 1:
                 count += 1
@@ -232,18 +251,14 @@ if wrong_ranking_cost_graphics==1:
     opt_var = parallel(mumf,sigma_m,mu_m)
     graphic_plt(a=mu_m,b=sigma_m,zvar="avg_incrt",array=opt_var,x_name=r"$\sigma_m$",y_name=r"$\mu_m$",title='number of options = '+str(number_of_options),save_name="wrong_ranking_cost_graphics.pdf",bar_label='Wrong ranking cost')
     graphic_plt(a=mu_m,b=sigma_m,zvar="avg_correct_ranking",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name="rate_of_correct_ranking.pdf",bar_label='Rate of correct ranking')
-    #plt_show(data_len= number_of_options,data_legend = number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 150)',\
-     #   y_name = "P-values",title="Number_of_options",save_name="number_of_units_vs_pvalue.pdf",y_var=["avg_pval"])
-
-    #plt_show(data_len= number_of_options,data_legend = number_of_options + number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 150)',\
-     #   y_name = "Measure_of_incorrectness",title="Number_of_options",save_name="number_of_units_vs_measure_of_incorrectness.pdf",y_var=["avg_incrt",'avg_incrt_w_n'])
+    graphic_plt(a=mu_m,b=sigma_m,zvar="avg_incrt_w_n",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name="wrong_ranking_cost_mu_sigma_m.pdf",bar_label='Wrong ranking cost')
 
 
 if not_considering_no_in_ranking ==1:
     mu_m = [i for i in range(500,2000,100)]
-    number_of_options = [2,5,10]
-    
-    def mumf(nop,mu_m):
+    number_of_options = [2,5,10,20]
+
+    def mumf(nop,mum):
         count = 0
         sum_pval = 0
         avg_incrtness = 0
@@ -258,7 +273,7 @@ if not_considering_no_in_ranking ==1:
         avg_pval = sum_pval/2000
         avg_incrtness = avg_incrtness/2000
         avg_incrtness_w_n = avg_incrtness_w_n/2000
-        return {"nop":nop,"mum": mum, "success_rate":count/2000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n}
+        return {"nop":nop,"mum": mum,"success_rate":count/2000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n}
 
     opt_var = parallel(mumf,number_of_options,mu_m)
 
@@ -267,3 +282,30 @@ if not_considering_no_in_ranking ==1:
 
     plt_show(data_len= number_of_options,data_legend = number_of_options + number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 150)',\
         y_name = "Measure_of_incorrectness",title="Number_of_options",save_name="number_of_units_vs_measure_of_incorrectness.pdf",y_var=["avg_incrt",'avg_incrt_w_n'])
+
+if not_considering_no_in_ranking_sigma ==1:
+    mu_m = [i for i in range(500,2000,100)]
+    number_of_options = [2,5,10,20]
+    sigma_m = [20,150]
+
+    def musigmamf(sigmam,nop,mum):
+        count = 0
+        sum_pval = 0
+        avg_incrtness = 0
+        avg_incrtness_w_n = 0
+        for k in range(2000):
+            success ,yes_test,max_rat_pval,incrt,incrt_w_n = main_process_flow(mu_m=mum,number_of_options=nop,sigma_m=sigmam,err_type=0)
+            sum_pval += max_rat_pval[1]
+            avg_incrtness += incrt
+            avg_incrtness_w_n += incrt_w_n
+            if success == 1:
+                count += 1
+        avg_pval = sum_pval/2000
+        avg_incrtness = avg_incrtness/2000
+        avg_incrtness_w_n = avg_incrtness_w_n/2000
+        return {"nop":nop,"mum": mum,'sigmam':sigmam,"success_rate":count/2000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n}
+
+    opt_var = parallel3(musigmamf,sigma_m,number_of_options,mu_m)
+
+    plt_show(data_len= sigma_m,data_legend = number_of_options + number_of_options,array=opt_var,var= "sigmam", plt_var="mum",x_name=r'$\mu_m$',\
+        y_name = "Wrong ranking cost",title="Number_of_options",save_name="number_of_units_vs_measure_of_incorrectness.pdf",y_var=["avg_incrt_w_n"])

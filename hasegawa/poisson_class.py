@@ -10,12 +10,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Decision_making:
-    def __init__(self,number_of_options,err_type,low_assessment_err,high_assessment_err):
+    def __init__(self,number_of_options,err_type,lambda_assessment_err):
         self.err_type = err_type
         self.number_of_options = number_of_options
         self.quorum = None
-        self.low_assessment_err = low_assessment_err
-        self.high_assessment_err = high_assessment_err
+        self.lambda_assessment_err = lambda_assessment_err
         self.votes = None
 
     def vote_counter(self,assigned_units,Dx):
@@ -24,7 +23,7 @@ class Decision_making:
         """
         votes = [0 for i in range(self.number_of_options)]
         for i in range(self.number_of_options):
-            assesment_error = np.round(np.random.uniform(low=self.low_assessment_err,high=self.high_assessment_err,size=len(assigned_units[i])),decimals= self.err_type)
+            assesment_error = np.round(np.random.poisson(lam=self.lambda_assessment_err,size=len(assigned_units[i])),decimals= self.err_type)
             for j in range(len(assigned_units[i])):
                 if (assigned_units[i][j] < (Dx[i] + assesment_error[j])):
                     votes[i] += 1
@@ -47,7 +46,7 @@ class Decision_making:
         """
         units_used = [0 for i in range(self.number_of_options)]
         for i in range(self.number_of_options):
-            assesment_error = np.round(np.random.uniform(low = self.low_assessment_err,high=self.high_assessment_err,size=len(assigned_units[i])),decimals= self.err_type)
+            assesment_error = np.round(np.random.poisson(lam = self.lambda_assessment_err,size=len(assigned_units[i])),decimals= self.err_type)
             count = 0
             while count<self.quorum:
                 if units_used[i] == len(assigned_units[i]):
@@ -80,8 +79,7 @@ class Decision_making:
 
 class qualityControl:
     def __init__(self,number_of_options,x_type):
-        self.low_x = None
-        self.high_x = None
+        self.lambda_x = None
         self.Dx = None
         self.x_type = x_type
         self.number_of_options = number_of_options
@@ -99,5 +97,5 @@ class qualityControl:
         """
         Provides distribution of quality stimulus for each option upto specified decimal places
         """
-        self.Dx = np.round(np.random.uniform(low=self.low_x,high = self.high_x,size=self.number_of_options),decimals=self.x_type)
+        self.Dx = np.round(np.random.poisson(lam=self.lambda_x,size=self.number_of_options),decimals=self.x_type)
 
