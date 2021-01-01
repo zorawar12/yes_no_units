@@ -28,7 +28,7 @@ class Decision_making:
 
     def vote_counter(self,assigned_units,Dx):
         """
-        Each unit provides its decision and votes are counted for each options 
+        Each unit provides its decision and votes are counted for each options
         """
         votes = [0 for i in range(self.number_of_options)]
         for i in range(self.number_of_options):
@@ -37,10 +37,10 @@ class Decision_making:
                 if (assigned_units[i][j] < (Dx[i] + assesment_error[j])):
                     votes[i] += 1
         self.votes = votes
-            
+
     def for_against_vote_counter(self,assigned_units,Dx,pc):
         """
-        Each unit provides its decision and votes are counted for each options 
+        Each unit provides its decision and votes are counted for each options
         """
         votes = [0 for i in range(self.number_of_options)]
         no_votes = [0 for i in range(self.number_of_options)]
@@ -78,15 +78,7 @@ class Decision_making:
     def best_among_bests_no(self,ref_highest_quality):
         """
         Returns success/failure of decision making when there are multiple correct decisions as per the units
-        """        
-        # available_opt = np.array(np.where(np.array(self.votes) == max(self.votes)))[0]
-        # best_opt = None
-        # for i in range(len(available_opt)):
-        #     if self.no_proportion.index(min(self.no_proportion))==available_opt[i]:
-        #         best_opt = i
-        #         break
-        # if best_opt == None:
-        #     best_opt = np.random.randint(0,len(available_opt))
+        """
         if self.no_proportion.index(min(self.no_proportion)) ==  ref_highest_quality:
             return 1
         else:
@@ -95,7 +87,7 @@ class Decision_making:
     def best_among_bests(self,ref_highest_quality):
         """
         Returns success/failure of decision making when there are multiple correct decisions as per the units
-        """        
+        """
         available_opt = np.array(np.where(np.array(self.votes) == max(self.votes)))[0]
         opt_choosen = np.random.randint(0,len(available_opt))
         if available_opt[opt_choosen] ==  ref_highest_quality:
@@ -125,7 +117,7 @@ class Decision_making:
         for i in range(self.number_of_options):
             if units_used[i] == len(assigned_units[i]):
                 flag += 1
-        if flag==self.number_of_options: 
+        if flag==self.number_of_options:
             quorum_reached = 0
             result = 0
             return result,quorum_reached
@@ -159,8 +151,7 @@ class qualityControl:
     def dx(self):
         """
         Provides distribution of quality stimulus for each option upto specified decimal places
-        """        
-        # self.Dx = np.sort(np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type))
+        """
         self.Dx = np.round(np.random.normal(self.mu_x,self.sigma_x,self.number_of_options),decimals=self.x_type)
 
 
@@ -184,7 +175,7 @@ class Qranking:
                     self.exp_rank[i,j] = 0.5
                 elif y_ratios[i]>y_ratios[j] and no_votes[i]>no_votes[j]:
                     self.exp_rank[i,j] = 0.5
-    
+
     def ref_ranking_w_n(self,oq,y_ratios,no_votes):
         for i in range(len(oq)):
             for j in range(i+1,self.n):
@@ -201,5 +192,5 @@ class Qranking:
             for j in range(i+1,self.n):
                 measure_of_incorrectness += abs(exp_rank[i,j]-self.ref_rank[i,j])
         measure_of_incorrectness = 2*measure_of_incorrectness/(self.n*(self.n - 1))
-        return measure_of_incorrectness           #   Higher measure of incorrectness more bad is the ranking by units votes 
+        return measure_of_incorrectness           #   Higher measure of incorrectness more bad is the ranking by units votes
 # %%
