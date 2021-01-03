@@ -69,7 +69,7 @@ def decision_make_check(number_of_options,Dx,assigned_units,err_type,mu_assessme
     if quorum == None:
         # plt.scatter(Dx,DM.votes)
         # plt.show()
-        return majority_dec,DM.yes_stats,DM.max_ratio_pvalue,incorrectness,incorrectness_w_n
+        return majority_dec,incorrectness,incorrectness_w_n,DM.yes_stats,DM.max_ratio_pvalue
     else:
         result,quorum_reached = DM.quorum_voting(assigned_units,Dx,ref_highest_quality)
         return result,quorum_reached,majority_dec
@@ -100,7 +100,7 @@ def parallel(func,a,b):
 
     opt_var = []
 
-    with Pool(16) as p:
+    with Pool(20) as p:
         opt_var = p.starmap(func,inp)
 
     return opt_var
@@ -178,18 +178,18 @@ if __name__ != "__main__":
     y_name = "Rate of correct choice",y_var = ["success_rate"],data_legend = opts,title="Number of options",save_name=path+ "Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
 
 if wrong_ranking_cost_graphics==1:
-    mu_m = [i for i in range(500,2001)]
-    sigma_m = [i for i in range(160,180)]
+    mu_m = [i for i in range(500,1000)]
+    sigma_m = [i for i in range(200)]
     number_of_options = 10
 
-    def mumf(sigm,mum):
+    def mumf(mum,sigm):
         count = 0
         sum_pval = 0
         avg_incrtness = 0
         avg_incrtness_w_n = 0
         avg_correct_ranking = 0
         for k in range(1000):
-            success ,yes_test,max_rat_pval,incrt,incrt_w_n = main_process_flow(mu_m=mum,sigma_m=sigm,err_type=0)
+            success ,incrt,incrt_w_n,yes_test,max_rat_pval = main_process_flow(mu_m=mum,sigma_m=sigm,err_type=0)
             sum_pval += max_rat_pval[1]
             avg_incrtness += incrt
             avg_incrtness_w_n += incrt_w_n
@@ -203,8 +203,8 @@ if wrong_ranking_cost_graphics==1:
         avg_correct_ranking = avg_correct_ranking/1000
         return {"sigm":sigm,"mum": mum, "success_rate":count/1000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n,'avg_correct_ranking':avg_correct_ranking}
 
-    opt_var = parallel(mumf,sigma_m,mu_m)
-    csv(opt_var,path+'WRC_graphics_4.csv')
+    opt_var = parallel(mumf,mu_m,sigma_m)
+    csv(opt_var,path+'WRC_graphics_5.csv')
 #    op = pd.read_csv(path+'WRC_graphics_3.csv')
 #    opt_var = []
 #
@@ -214,9 +214,9 @@ if wrong_ranking_cost_graphics==1:
 #            a[str(i)] = op[str(i)][j]
 #        opt_var.append(a)
 
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt",array=opt_var,x_name=r"$\sigma_m$",y_name=r"$\mu_m$",title='number of options = '+str(number_of_options),save_name=path+"wrc_graphics_4.pdf",bar_label='Wrong ranking cost')
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_correct_ranking",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"RCR_4.pdf",bar_label='Rate of correct ranking')
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt_w_n",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"wrc_mu_sigma_m_4.pdf",bar_label='Wrong ranking cost')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt",array=opt_var,x_name=r"$\sigma_m$",y_name=r"$\mu_m$",title='number of options = '+str(number_of_options),save_name=path+"wrc_graphics_5.pdf",bar_label='Wrong ranking cost')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_correct_ranking",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"RCR_5.pdf",bar_label='Rate of correct ranking')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt_w_n",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"wrc_mu_sigma_m_5.pdf",bar_label='Wrong ranking cost')
 
 
 if not_considering_no_in_ranking ==1:
