@@ -31,9 +31,8 @@ err_type = 0                                #   Number of decimal places of qual
 confidence = 0.02                           #   Confidence for distinguishing qualities
 path = os.getcwd() + "/results/"
 
-wrong_ranking_cost_graphics = 1
-not_considering_no_in_ranking = 0
-not_considering_no_in_ranking_sigma = 0
+wrong_ranking_cost_contour = 0
+pval_WRC_2D = 1
 
 def units(mu_m,sigma_m,number_of_options):
     a = np.array(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0))
@@ -177,7 +176,7 @@ if __name__ != "__main__":
     linePlot(data_len= opts,array= output,var= "opt", plt_var="sigma",x_name=r'$\sigma_h$',\
     y_name = "Rate of correct choice",y_var = ["success_rate"],data_legend = opts,title="Number of options",save_name=path+ "Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
 
-if wrong_ranking_cost_graphics==1:
+if wrong_ranking_cost_contour==1:
     mu_m = [i for i in range(500,1000)]
     sigma_m = [i for i in range(200)]
     number_of_options = 10
@@ -188,23 +187,27 @@ if wrong_ranking_cost_graphics==1:
         avg_incrtness = 0
         avg_incrtness_w_n = 0
         avg_correct_ranking = 0
-        for k in range(1000):
-            success ,incrt,incrt_w_n,yes_test,max_rat_pval = main_process_flow(mu_m=mum,sigma_m=sigm,err_type=0)
-            sum_pval += max_rat_pval[1]
-            avg_incrtness += incrt
-            avg_incrtness_w_n += incrt_w_n
-            if incrt_w_n == 0:
-                avg_correct_ranking +=1
-            if success == 1:
-                count += 1
-        avg_pval = sum_pval/1000
-        avg_incrtness = avg_incrtness/1000
-        avg_incrtness_w_n = avg_incrtness_w_n/1000
-        avg_correct_ranking = avg_correct_ranking/1000
-        return {"sigm":sigm,"mum": mum, "success_rate":count/1000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n,'avg_correct_ranking':avg_correct_ranking}
+        loop = 0
+        while loop <= 1000:
+            success,incrt,incrt_w_n,yes_test,max_rat_pval = main_process_flow(mu_m=mum,sigma_m=sigm,err_type=0)
+            flag = 0
+            for i in yes_test:
+                for j in i:
+                    if j[0][0]== np.nan or j[1]<0:
+                        flag = 1
+                        break
+            if max_rat_pval[0][0]!= np.nan and max_rat_pval[1]>0 and flag!=1:
+                sum_pval += max_rat_pval[1]
+                avg_incrtness += incrt
+                avg_incrtness_w_n += incrt_w_n
+                if incrt_w_n == 0:
+                    avg_correct_ranking +=1
+                if success == 1:
+                    count += 1
+                loop+=1
 
     opt_var = parallel(mumf,mu_m,sigma_m)
-    csv(opt_var,path+'WRC_graphics_5.csv')
+    csv(opt_var,path+'WRC_contour.csv')
 #    op = pd.read_csv(path+'WRC_graphics_3.csv')
 #    opt_var = []
 #
@@ -214,12 +217,12 @@ if wrong_ranking_cost_graphics==1:
 #            a[str(i)] = op[str(i)][j]
 #        opt_var.append(a)
 
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt",array=opt_var,x_name=r"$\sigma_m$",y_name=r"$\mu_m$",title='number of options = '+str(number_of_options),save_name=path+"wrc_graphics_5.pdf",bar_label='Wrong ranking cost')
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_correct_ranking",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"RCR_5.pdf",bar_label='Rate of correct ranking')
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt_w_n",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"wrc_mu_sigma_m_5.pdf",bar_label='Wrong ranking cost')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt",array=opt_var,x_name=r"$\sigma_m$",y_name=r"$\mu_m$",title='number of options = '+str(number_of_options),save_name=path+"sigma_m_vs_mu_m_vs_WRC_contour.pdf",bar_label='Wrong ranking cost')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_correct_ranking",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"mu_m_vs_sigma_m_vs_RCR_contour.pdf",bar_label='Rate of correct ranking')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt_w_n",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"mu_m_vs_sigma_m_vs_WRC_contour_without_no.pdf",bar_label='Wrong ranking cost')
 
 
-if not_considering_no_in_ranking ==1:
+if pval_WRC_2D ==1:
     mu_m = [i for i in range(500,2000,100)]
     number_of_options = [2,5,10,20]
 
@@ -228,13 +231,23 @@ if not_considering_no_in_ranking ==1:
         sum_pval = 0
         avg_incrtness = 0
         avg_incrtness_w_n = 0
-        for k in range(2000):
-            success ,yes_test,max_rat_pval,incrt,incrt_w_n = main_process_flow(mu_m=mum,number_of_options=nop,err_type=0)
-            sum_pval += max_rat_pval[1]
-            avg_incrtness += incrt
-            avg_incrtness_w_n += incrt_w_n
-            if success == 1:
-                count += 1
+        loop = 0
+        while loop<=2000:
+            success,incrt,incrt_w_n,yes_test,max_rat_pval = main_process_flow(mu_m=mum,number_of_options=nop,err_type=0)
+            flag = 0
+            for i in yes_test:
+                for j in i:
+                    if j[0][0]== np.nan or j[1]<0:
+                        flag = 1
+                        break
+            if max_rat_pval[0][0]!= np.nan and max_rat_pval[1]>0 and flag!=1:
+                sum_pval += max_rat_pval[1]
+                avg_incrtness += incrt
+                avg_incrtness_w_n += incrt_w_n
+                if success == 1:
+                    count += 1
+                loop += 1
+
         avg_pval = sum_pval/2000
         avg_incrtness = avg_incrtness/2000
         avg_incrtness_w_n = avg_incrtness_w_n/2000
@@ -242,35 +255,8 @@ if not_considering_no_in_ranking ==1:
 
     opt_var = parallel(mumf,number_of_options,mu_m)
 
-    plt_show(data_len= number_of_options,data_legend = number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 150)',\
-        y_name = "P-values",title="Number_of_options",save_name="number_of_units_vs_pvalue.pdf",y_var=["avg_pval"])
+    linePlot(data_len= number_of_options,data_legend = number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name=r'$\mu_m$',\
+        y_name = "P-values",title="Number of options",save_name=path + "mu_m_vs_pvalue_2D.pdf",y_var=["avg_pval"])
 
-    plt_show(data_len= number_of_options,data_legend = number_of_options + number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name='mean_number_of_units(variance = 150)',\
-        y_name = "Measure_of_incorrectness",title="Number_of_options",save_name="number_of_units_vs_measure_of_incorrectness.pdf",y_var=["avg_incrt",'avg_incrt_w_n'])
-
-if not_considering_no_in_ranking_sigma ==1:
-    mu_m = [i for i in range(500,2000,100)]
-    number_of_options = [2,5,10,20]
-    sigma_m = [20,150]
-
-    def musigmamf(sigmam,nop,mum):
-        count = 0
-        sum_pval = 0
-        avg_incrtness = 0
-        avg_incrtness_w_n = 0
-        for k in range(2000):
-            success ,yes_test,max_rat_pval,incrt,incrt_w_n = main_process_flow(mu_m=mum,number_of_options=nop,sigma_m=sigmam,err_type=0)
-            sum_pval += max_rat_pval[1]
-            avg_incrtness += incrt
-            avg_incrtness_w_n += incrt_w_n
-            if success == 1:
-                count += 1
-        avg_pval = sum_pval/2000
-        avg_incrtness = avg_incrtness/2000
-        avg_incrtness_w_n = avg_incrtness_w_n/2000
-        return {"nop":nop,"mum": mum,'sigmam':sigmam,"success_rate":count/2000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n}
-
-    opt_var = parallel3(musigmamf,sigma_m,number_of_options,mu_m)
-    csv(opt_var,'not_considering_no_in_ranking_sigma.csv')
-    plt_show(data_len= sigma_m,data_legend = number_of_options + number_of_options,array=opt_var,var= "sigmam", plt_var="mum",x_name=r'$\mu_m$',\
-        y_name = "Wrong ranking cost",title="Number_of_options",save_name="number_of_units_vs_measure_of_incorrectness.pdf",y_var=["avg_incrt_w_n"])
+    linePlot(data_len= number_of_options,data_legend = number_of_options + number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name=r'$\mu_m$',\
+        y_name = "Wrong ranking cost",title="Number of options",save_name=path + "mu_m_vs_WRC_2D.pdf",y_var=["avg_incrt",'avg_incrt_w_n'])
