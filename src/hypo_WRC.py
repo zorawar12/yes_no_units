@@ -31,13 +31,14 @@ err_type = 0                                #   Number of decimal places of qual
 confidence = 0.02                           #   Confidence for distinguishing qualities
 path = os.getcwd() + "/results/"
 
-wrong_ranking_cost_contour = 0
-pval_WRC_2D = 1
+wrong_ranking_cost_contour = 1
+pval_WRC_2D = 0
 
 def units(mu_m,sigma_m,number_of_options):
     a = np.array(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0))
-    while a.any()<=0.:
-        a = np.array(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0))
+    for i in range(len(a)):
+        while a[i]<=0:
+            a[i] = np.round(np.random.normal(mu_m,sigma_m),decimals=0)
     return a
 
 def threshold(m_units,h_type,mu_h,sigma_h):
@@ -99,7 +100,7 @@ def parallel(func,a,b):
 
     opt_var = []
 
-    with Pool(20) as p:
+    with Pool(16) as p:
         opt_var = p.starmap(func,inp)
 
     return opt_var
@@ -177,8 +178,8 @@ if __name__ != "__main__":
     y_name = "Rate of correct choice",y_var = ["success_rate"],data_legend = opts,title="Number of options",save_name=path+ "Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
 
 if wrong_ranking_cost_contour==1:
-    mu_m = [i for i in range(500,1000)]
-    sigma_m = [i for i in range(200)]
+    mu_m = [i for i in range(1,2000)]
+    sigma_m = [i for i in range(0,500)]
     number_of_options = 10
 
     def mumf(mum,sigm):
@@ -197,17 +198,28 @@ if wrong_ranking_cost_contour==1:
                         flag = 1
                         break
             if max_rat_pval[0][0]!= np.nan and max_rat_pval[1]>0 and flag!=1:
-                sum_pval += max_rat_pval[1]
-                avg_incrtness += incrt
-                avg_incrtness_w_n += incrt_w_n
-                if incrt_w_n == 0:
-                    avg_correct_ranking +=1
-                if success == 1:
-                    count += 1
-                loop+=1
+                sum_pval += max_rat_pval[0][1]
+            else:
+                sum_pval += 1
+
+            avg_incrtness += incrt
+            avg_incrtness_w_n += incrt_w_n
+
+            if incrt_w_n == 0:
+                avg_correct_ranking +=1
+            if success == 1:
+                count += 1
+            loop+=1
+
+        avg_pval = sum_pval/1000
+        avg_incrtness = avg_incrtness/1000
+        avg_incrtness_w_n = avg_incrtness_w_n/1000
+        avg_correct_ranking = avg_correct_ranking/1000
+        return {"sigm":sigm,"mum": mum, "success_rate":count/1000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n,'avg_correct_ranking':avg_correct_ranking}
 
     opt_var = parallel(mumf,mu_m,sigma_m)
-    csv(opt_var,path+'WRC_contour.csv')
+    print(opt_var)
+    csv(data = opt_var,file = path+'WRC_contour.csv')
 #    op = pd.read_csv(path+'WRC_graphics_3.csv')
 #    opt_var = []
 #
@@ -223,7 +235,7 @@ if wrong_ranking_cost_contour==1:
 
 
 if pval_WRC_2D ==1:
-    mu_m = [i for i in range(500,2000,100)]
+    mu_m = [i for i in range(500,2000,20)]
     number_of_options = [2,5,10,20]
 
     def mumf(nop,mum):
@@ -241,12 +253,15 @@ if pval_WRC_2D ==1:
                         flag = 1
                         break
             if max_rat_pval[0][0]!= np.nan and max_rat_pval[1]>0 and flag!=1:
-                sum_pval += max_rat_pval[1]
-                avg_incrtness += incrt
-                avg_incrtness_w_n += incrt_w_n
-                if success == 1:
-                    count += 1
-                loop += 1
+                sum_pval += max_rat_pval[0][1]
+            else:
+                sum_pval += 1
+#            sum_pval += max_rat_pval[0][1]
+            avg_incrtness += incrt
+            avg_incrtness_w_n += incrt_w_n
+            if success == 1:
+                count += 1
+            loop += 1
 
         avg_pval = sum_pval/2000
         avg_incrtness = avg_incrtness/2000
@@ -254,7 +269,7 @@ if pval_WRC_2D ==1:
         return {"nop":nop,"mum": mum,"success_rate":count/2000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n}
 
     opt_var = parallel(mumf,number_of_options,mu_m)
-
+    csv(data = opt_var,file = path+"2D_WRC_p-value.csv")
     linePlot(data_len= number_of_options,data_legend = number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name=r'$\mu_m$',\
         y_name = "P-values",title="Number of options",save_name=path + "mu_m_vs_pvalue_2D.pdf",y_var=["avg_pval"])
 

@@ -35,11 +35,11 @@ path = os.getcwd() + "/results/"
 Without_assesment_error_Majority_based_decision = 0
 With_assesment_error_Majority_based_decision = 0
 random_choice_many_best_option = 0
-sig_h_vs_RCD_vs_nop = 0
+sig_h_vs_RCD_vs_nop = 1
 mu_h_vs_RCD_vs_nop = 0
 nop_vs_RCD_vs_mu_h = 0
 mu_m_vs_RCD_nop = 0
-sigma_m_vs_RCD_vs_nop = 1
+sigma_m_vs_RCD_vs_nop = 0
 mu_h_vs_sigma_h_vs_RCD = 0
 mu_h_vs_mu_x_vs_RCD = 0
 sig_h_vs_sig_x_vs_RCD = 0
@@ -54,7 +54,11 @@ def units(mu_m,sigma_m,number_of_options):
     Returns:
     Number of units to be assigned to an option choosen from N(mu_m,sigma_m) (array[1xn])
     """
-    return np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0)
+    a = np.array(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0))
+    for i in a:
+        if i <=0:
+            a = np.array(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0))
+    return a
 
 def threshold(m_units,h_type,mu_h,sigma_h):
     """
@@ -249,10 +253,10 @@ if sig_h_vs_RCD_vs_nop==1:
         return opt_va
 
     opt_var = parallel(sighf,opts,sig_h)
-    csv(data=opt_var,file =path + "sig_h_vs_RCD_vs_nop.csv")
+    csv(data=opt_var,file =path + "1_sig_h_vs_RCD_vs_nop.csv")
     linePlot(data_len= opts,array= opt_var,var= "opt", plt_var="sigma",\
     x_name=r'$\sigma_h$',y_name="Rate of correct choice", title="Number of options",\
-    save_name=path + "sig_h_vs_RCD_vs_nop.pdf")
+    save_name=path + "1_sig_h_vs_RCD_vs_nop.pdf")
 
 # Majority based Rate of correct choice as a function of mu_h for varying number of options
 if mu_h_vs_RCD_vs_nop==1:
