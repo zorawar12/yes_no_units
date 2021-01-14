@@ -8,23 +8,26 @@ import matplotlib
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-if __name__ != "__main__":
-    import hasegawa.classynu as yn
-else:
-    import classynu as yn
+import classynu as yn
 from multiprocessing import Pool
 from operator import itemgetter
 import os
-import csv as c
+
 
 
 number_of_options = 10                      #   Number of options to choose best one from
-mu_x = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
-sigma_x = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
-mu_h = 0                                    #   Mean of distribution from which units threshold are sampled randomly
-sigma_h = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
-mu_m = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
-sigma_m = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
+mu_x_1 = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
+sigma_x_1 = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
+mu_x_2 = 1.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
+sigma_x_2 = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
+mu_h_1 = 0                                    #   Mean of distribution from which units threshold are sampled randomly
+sigma_h_1 = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
+mu_h_2 = 1                                    #   Mean of distribution from which units threshold are sampled randomly
+sigma_h_2 = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
+mu_m_1 = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
+sigma_m_1 = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
+mu_m_2 = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
+sigma_m_2 = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
 mu_assessment_err = 0.0                     #   Mean of distribution from which units quality assessment error are sampled randomly
 sigma_assessment_err = 0.0                  #   Standard deviation of distribution from which units quality assessment error are sampled randomly
 x_type = 3                                  #   Number of decimal places of quality stimulus
@@ -35,13 +38,13 @@ path = os.getcwd() + "/results/"
 Without_assesment_error_Majority_based_decision = 0
 With_assesment_error_Majority_based_decision = 0
 random_choice_many_best_option = 0
-sig_h_vs_RCD_vs_nop = 1
+sig_h_vs_RCD_vs_nop = 0
 mu_h_vs_RCD_vs_nop = 0
 nop_vs_RCD_vs_mu_h = 0
 mu_m_vs_RCD_nop = 0
 sigma_m_vs_RCD_vs_nop = 0
 mu_h_vs_sigma_h_vs_RCD = 0
-mu_h_vs_mu_x_vs_RCD = 0
+mu_h_vs_mu_x_vs_RCD = 1
 sig_h_vs_sig_x_vs_RCD = 0
 quorum_vs_RC_vs_sig_m = 0
 
@@ -54,10 +57,11 @@ def units(mu_m,sigma_m,number_of_options):
     Returns:
     Number of units to be assigned to an option choosen from N(mu_m,sigma_m) (array[1xn])
     """
+
     a = np.array(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0))
     for i in range(len(a)):
         while a[i] <=0:
-            a[i] = np.array(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0))
+            a[i] = np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0)
     return a
 
 def threshold(m_units,h_type,mu_h,sigma_h):
@@ -74,7 +78,7 @@ def threshold(m_units,h_type,mu_h,sigma_h):
     """
     return np.round(np.random.normal(mu_h,sigma_h,abs(m_units)),decimals=h_type)
 
-def quality(number_of_options,x_type,mu_x,sigma_x):
+def quality(number_of_options,x_type,mu_x_1,sigma_x_1,mu_x_2,sigma_x_2):
     """
     Creates quality stimulus
     Arguments:
@@ -86,8 +90,10 @@ def quality(number_of_options,x_type,mu_x,sigma_x):
     Array[1 x number_of_options] of qualities for each option
     """
     QC = yn.qualityControl(number_of_options=number_of_options,x_type=x_type)
-    QC.mu_x = mu_x
-    QC.sigma_x = sigma_x
+    QC.mu_x_1 = mu_x_1
+    QC.sigma_x_1 = sigma_x_1
+    QC.mu_x_2 = mu_x_2
+    QC.sigma_x_2 = sigma_x_2
     QC.dx()
     QC.ref_highest_qual()
     return QC
@@ -116,6 +122,7 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
     DM.quorum = quorum
     DM.vote_counter(assigned_units,Dx)
     majority_dec = DM.best_among_bests(ref_highest_quality)
+
     if quorum == None:
         # plt.scatter(Dx,DM.votes)
         # plt.show()
@@ -126,16 +133,26 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
         result,quorum_reached = DM.quorum_voting(assigned_units,Dx,ref_highest_quality)
         return result,quorum_reached,majority_dec
 
-def one_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h,\
-    x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err):
+def one_run(number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,\
+    mu_m_2=mu_m_2,sigma_m_2=sigma_m_2,h_type=h_type,mu_h_1=mu_h_1,sigma_h_1=sigma_h_1,mu_h_2=mu_h_2,sigma_h_2=sigma_h_2,x_type=x_type,mu_x_1=mu_x_1,sigma_x_1=sigma_x_1,mu_x_2=mu_x_2,sigma_x_2=sigma_x_2,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err):
 
-    pc = np.array(units(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m)).astype(int)
+    pc_1 = np.array(units(number_of_options=number_of_options,mu_m=mu_m_1,sigma_m=sigma_m_1)).astype(int)
+    pc_2 = np.array(units(number_of_options=number_of_options,mu_m=mu_m_2,sigma_m=sigma_m_2)).astype(int)
+    pc = np.concatenate((pc_1,pc_2),axis=None)
 
     units_distribution = []
     for i in pc:
-        units_distribution.append(threshold(m_units = i ,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h))
+        if i%2 == 0:
+            thresholds_1 = threshold(m_units = int(i/2) ,h_type=h_type,mu_h=mu_h_1,sigma_h=sigma_h_1)
+            thresholds_2 = threshold(m_units = int(i/2) ,h_type=h_type,mu_h=mu_h_2,sigma_h=sigma_h_2)
+            thresholds = np.concatenate((thresholds_1,thresholds_2),axis=None)
+        else:
+            thresholds_1 = threshold(m_units = int((i+1)/2) ,h_type=h_type,mu_h=mu_h_1,sigma_h=sigma_h_1)
+            thresholds_2 = threshold(m_units = int((i-1)/2) ,h_type=h_type,mu_h=mu_h_2,sigma_h=sigma_h_2)
+            thresholds = np.concatenate((thresholds_1,thresholds_2),axis=None)
+        units_distribution.append(thresholds)
 
-    qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x)
+    qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x_1=mu_x_1,sigma_x_1=sigma_x_1,mu_x_2=mu_x_2,sigma_x_2=sigma_x_2)
 
     dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,assigned_units= units_distribution,\
         err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,\
@@ -147,17 +164,26 @@ def one_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type
     else:
         print("failed")
 
-def multi_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h,\
-    x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,err_type=err_type,mu_assessment_err= mu_assessment_err,\
-    sigma_assessment_err=sigma_assessment_err,quorum= None):
+def multi_run(number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,\
+    mu_m_2=mu_m_2,sigma_m_2=sigma_m_2,h_type=h_type,mu_h_1=mu_h_1,sigma_h_1=sigma_h_1,mu_h_2=mu_h_2,sigma_h_2=sigma_h_2,x_type=x_type,mu_x_1=mu_x_1,sigma_x_1=sigma_x_1,mu_x_2=mu_x_2,sigma_x_2=sigma_x_2,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,quorum= None):
 
-    pc = np.array(units(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m)).astype(int)
+    pc_1 = np.array(units(number_of_options=number_of_options,mu_m=mu_m_1,sigma_m=sigma_m_1)).astype(int)
+    pc_2 = np.array(units(number_of_options=number_of_options,mu_m=mu_m_2,sigma_m=sigma_m_2)).astype(int)
+    pc = np.concatenate((pc_1,pc_2),axis=None)
 
     units_distribution = []
     for i in pc:
-        units_distribution.append(threshold(m_units = i ,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h))
+        if i%2 == 0:
+            thresholds_1 = threshold(m_units = int(i/2) ,h_type=h_type,mu_h=mu_h_1,sigma_h=sigma_h_1)
+            thresholds_2 = threshold(m_units = int(i/2) ,h_type=h_type,mu_h=mu_h_2,sigma_h=sigma_h_2)
+            thresholds = np.concatenate((thresholds_1,thresholds_2),axis=None)
+        else:
+            thresholds_1 = threshold(m_units = int((i+1)/2) ,h_type=h_type,mu_h=mu_h_1,sigma_h=sigma_h_1)
+            thresholds_2 = threshold(m_units = int((i-1)/2) ,h_type=h_type,mu_h=mu_h_2,sigma_h=sigma_h_2)
+            thresholds = np.concatenate((thresholds_1,thresholds_2),axis=None)
+        units_distribution.append(thresholds)
 
-    qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x)
+    qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x_1=mu_x_1,sigma_x_1=sigma_x_1,mu_x_2=mu_x_2,sigma_x_2=sigma_x_2)
 
     dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,assigned_units= units_distribution,\
         err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,\
@@ -198,9 +224,12 @@ def linePlot(data_len,array,var,plt_var,x_name,y_name,title,save_name):
     plt.savefig(save_name,format = "pdf")
     plt.show()
 
-def graphicPlot(a,b,array,x_name,y_name,z_name,title,save_name):
+def graphicPlot(a,b,array,x_name,y_name,z_name,title,save_name,z_var = None):
     fig, ax = plt.subplots()
-    z = np.array(list(map(itemgetter("success_rate"), array))).reshape(len(a),len(b))
+    if z_var is not None:
+        z = np.array(z_var).reshape(len(a),len(b))
+    else:
+        z = np.array(list(map(itemgetter("success_rate"), array))).reshape(len(a),len(b))
     cs = ax.contourf(b,a,z)
     cbar = fig.colorbar(cs)
     cbar.set_label(z_name)
@@ -225,14 +254,7 @@ def csv(data,file):
     f = pd.DataFrame(data=data)
     f.to_csv(file)
 
-def save_data(save_string):
-    check = os.listdir(path)
-    count = 0
-    for i in check:
-        if str(count)+'.txt'==i:
-            count+=1
-    save_string = str(count)+save_string
-    return save_string
+
 # Without assesment error Majority based decision
 if Without_assesment_error_Majority_based_decision==1:
     one_run()
@@ -247,32 +269,23 @@ if random_choice_many_best_option==1:
 
 # Majority based Rate of correct choice as a function of sigma_h for varying number of options
 if sig_h_vs_RCD_vs_nop==1:
-    save_string = save_data('mu_h_vs_RCD_vs_nop')
-    f = open(path+save_string+'.csv','a')
-    columns = pd.DataFrame(data=np.array([["opt","sigma","success_rate"]]))
-    columns.to_csv(path+save_string+'.csv',mode='a',header=False,index=False)
-    sig_h = [0.0+i*0.01 for i in range(501)]
+    sig_h = [0.0+i*0.01 for i in range(101)]
     opts = [2,10,40]
 
     def sighf(op,sigh):
-        global f
         count = 0
         for k in range(1000):
-            success = multi_run(sigma_h=sigh,number_of_options=op,err_type=0)
+            success = multi_run(sigma_h_1=sigh,sigma_h_2=sigh,number_of_options=op,err_type=0)
             if success == 1:
                 count += 1
-        opt_va = {"opt":op,"sigma": sigh, "success_rate":count/1000}
-        out = np.array([[op,sigh,count/1000]])
-        out = pd.DataFrame(data=out)
-        out.to_csv(path+save_string+'.csv',mode='a',header=False,index=False)
-
+        opt_va = {"opt":op,"sigma_h_1": sigh,"sigma_h_2": sigh, "success_rate":count/1000}
         return opt_va
 
     opt_var = parallel(sighf,opts,sig_h)
-    csv(data=opt_var,file =path +save_string +'last.csv')
-    linePlot(data_len= opts,array= opt_var,var= "opt", plt_var="sigma",\
+    csv(data=opt_var,file =path + "sig_h_vs_RCD_vs_nop.csv")
+    linePlot(data_len= opts,array= opt_var,var= "opt", plt_var="sigma_h_1",\
     x_name=r'$\sigma_h$',y_name="Rate of correct choice", title="Number of options",\
-    save_name=path + save_string+".pdf")
+    save_name=path + "1_sig_h_vs_RCD_vs_nop.pdf")
 
 # Majority based Rate of correct choice as a function of mu_h for varying number of options
 if mu_h_vs_RCD_vs_nop==1:
@@ -281,7 +294,7 @@ if mu_h_vs_RCD_vs_nop==1:
 
     def muhf(op,j):
         count = 0
-        for k in range(000):
+        for k in range(2000):
             success = multi_run(mu_h=j,number_of_options=op,err_type=0)
             if success == 1:
                 count += 1
@@ -372,22 +385,51 @@ if mu_h_vs_sigma_h_vs_RCD==1:
 
 # Majority based Rate of correct choice as a function of mu_x for varying mu_h
 if mu_h_vs_mu_x_vs_RCD==1:
-    mu_x = [np.round(-4.0+i*0.08,decimals=2) for i in range(101)]
-    mu_h = [np.round(-4.0+i*0.08,decimals=2) for i in range(101)]
+    mu_x = [np.round(-4.0+i*0.1,decimals=1) for i in range(201)]
+    mu_h = [np.round(-4.0+i*0.1,decimals=1) for i in range(201)]
 
-    def sighf(muh,mux):
-        count = 0
-        for k in range(1000):
-            success = multi_run(mu_h=muh,mu_x=mux,err_type=0)
-            if success == 1:
-                count += 1
-        mu_va = {"mux":mux,"muh": muh, "success_rate":count/1000}
-        return mu_va
+    # def mux1muh1(muh,mux):
+    #     count = 0
+    #     for k in range(1000):
+    #         success = multi_run(mu_h_1=muh,mu_h_2=2*muh,mu_x_1=mux,mu_x_2=2*mux,err_type=0)
+    #         if success == 1:
+    #             count += 1
+    #     mu_va = {"mux1":mux,"mux2":2*mux,"muh1": muh,"muh2": 2*muh,\
+    #          "success_rate":count/1000}
+    #     return mu_va
 
-    opt_var = parallel(sighf,mu_h,mu_x)
-    csv(data=opt_var,file=path+"mu_h_vs_mu_x_vs_RCD.csv")
-    graphicPlot(a= mu_h,b=mu_x ,array= opt_var,x_name=r'$\mu_x$',y_name=r"$\mu_h$",z_name="Rate of correct choice",\
-    title="Number_of_options = 10",save_name=path+"mu_h_vs_mu_x_vs_RCD.pdf")
+    # opt_var = parallel(mux1muh1,mu_h,mu_x)
+    # csv(data=opt_var,file=path+"mu_h_1_vs_mu_x_1_vs_RCD.csv")
+    op = pd.read_csv(path+'mu_h_1_vs_mu_x_1_vs_RCD_del_mu_const.csv')
+    opt_var = []
+
+    for j in range(len(op['muh1'])):
+        a = {}
+        for i in op:
+            a[str(i)] = op[str(i)][j]
+        opt_var.append(a)
+    x_var_ = "muh2"
+    y_var_ = "mux2"
+    z_var_ = "success_rate"
+    x = []
+    y = []
+    z = []
+    for i in opt_var:
+        if i[x_var_] not in x:
+            x.append(i[x_var_])
+        if i[y_var_] not in y:
+            y.append(i[y_var_])
+    for i in x:
+        for j in y:
+            for k in opt_var:
+                if k[x_var_] == i and k[y_var_] == j:
+                    z.append(k[z_var_])
+        print(np.round(len(z)/(len(x)*len(y)),decimals=2),end="\r")
+    print(np.round(len(z)/(len(x)*len(y)),decimals=2))
+    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'$\mu_{x_2}$',y_name=r"$\mu_{h_2}$",z_name="Rate of correct choice",\
+    title="Number_of_options = 10",save_name=path+"mu_h_2_vs_mu_x_2_vs_RCD_c.pdf",z_var=z)
+
+    # graphicPlot(a= mu_h,b=mu_x ,array= opt_var,x_name=r'$\mu_{x_1}$',y_name=r"$\mu_{h_1}$",z_name="Rate of correct choice",title="Number_of_options = 10",save_name=path+"mu_h_1_vs_mu_x_1_vs_RCD.pdf")
 
 # Majority based Rate of correct choice as a function of sigma_x for varying sigma_h
 if sig_h_vs_sig_x_vs_RCD==1:
@@ -443,3 +485,6 @@ if quorum_vs_RC_vs_sig_m==1:
         barPlot(quorum,opt_v[str(sig_m[i])],save_name[i],"maj")
 
 # Decoy effect in individual decision and collective decision
+
+# %%
+

@@ -178,8 +178,8 @@ if __name__ != "__main__":
     y_name = "Rate of correct choice",y_var = ["success_rate"],data_legend = opts,title="Number of options",save_name=path+ "Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
 
 if wrong_ranking_cost_contour==1:
-    mu_m = [i for i in range(1,2000)]
-    sigma_m = [i for i in range(0,500)]
+    mu_m = [i for i in range(100,2000,10)]
+    sigma_m = [i for i in range(0,500,10)]
     number_of_options = 10
 
     def mumf(mum,sigm):
@@ -219,7 +219,7 @@ if wrong_ranking_cost_contour==1:
 
     opt_var = parallel(mumf,mu_m,sigma_m)
     print(opt_var)
-    csv(data = opt_var,file = path+'WRC_contour.csv')
+    csv(data = opt_var,file = path+'1_WRC_contour.csv')
 #    op = pd.read_csv(path+'WRC_graphics_3.csv')
 #    opt_var = []
 #
@@ -229,9 +229,9 @@ if wrong_ranking_cost_contour==1:
 #            a[str(i)] = op[str(i)][j]
 #        opt_var.append(a)
 
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt",array=opt_var,x_name=r"$\sigma_m$",y_name=r"$\mu_m$",title='number of options = '+str(number_of_options),save_name=path+"sigma_m_vs_mu_m_vs_WRC_contour.pdf",bar_label='Wrong ranking cost')
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_correct_ranking",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"mu_m_vs_sigma_m_vs_RCR_contour.pdf",bar_label='Rate of correct ranking')
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt_w_n",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"mu_m_vs_sigma_m_vs_WRC_contour_without_no.pdf",bar_label='Wrong ranking cost')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt",array=opt_var,x_name=r"$\sigma_m$",y_name=r"$\mu_m$",title='number of options = '+str(number_of_options),save_name=path+"1_sigma_m_vs_mu_m_vs_WRC_contour.pdf",bar_label='Wrong ranking cost')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_correct_ranking",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"1_mu_m_vs_sigma_m_vs_RCR_contour.pdf",bar_label='Rate of correct ranking')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt_w_n",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"1_mu_m_vs_sigma_m_vs_WRC_contour_without_no.pdf",bar_label='Wrong ranking cost')
 
 
 if pval_WRC_2D ==1:
@@ -256,7 +256,7 @@ if pval_WRC_2D ==1:
                 sum_pval += max_rat_pval[0][1]
             else:
                 sum_pval += 1
-#            sum_pval += max_rat_pval[0][1]
+
             avg_incrtness += incrt
             avg_incrtness_w_n += incrt_w_n
             if success == 1:
