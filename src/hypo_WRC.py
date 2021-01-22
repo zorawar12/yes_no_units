@@ -2,7 +2,7 @@
 
 # Author: Swadhin Agrawal
 # E-mail: swadhin20@iiserb.ac.in
-import csv
+import csv as c
 import numpy as np
 import matplotlib.pyplot as plt
 if __name__ != "__main__":
@@ -31,8 +31,8 @@ err_type = 0                                #   Number of decimal places of qual
 confidence = 0.02                           #   Confidence for distinguishing qualities
 path = os.getcwd() + "/results/"
 
-wrong_ranking_cost_contour = 1
-pval_WRC_2D = 0
+wrong_ranking_cost_contour = 0
+pval_WRC_2D = 1
 
 def units(mu_m,sigma_m,number_of_options):
     a = np.array(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0))
@@ -158,6 +158,16 @@ def csv(data,file):
     f = pd.DataFrame(data=data)
     f.to_csv(file)
 
+def save_data(save_string):
+    check = os.listdir(path)
+    count = 0
+    for i in check:
+        if str(count)+'.txt'==i:
+            count+=1
+    save_string = str(count) + save_string
+    f1 = open(path+str(count)+'.txt','w')
+    return save_string
+
 if __name__ != "__main__":
     # This is cor checking confidence on 'yes' counts among each pair of options
     sig_h = [0.0+i*0.01 for i in range(101)]
@@ -178,63 +188,76 @@ if __name__ != "__main__":
     y_name = "Rate of correct choice",y_var = ["success_rate"],data_legend = opts,title="Number of options",save_name=path+ "Sigma_h_vs_Rate_of_correct_choice_sorted_no.pdf")
 
 if wrong_ranking_cost_contour==1:
-    mu_m = [i for i in range(100,2000,10)]
-    sigma_m = [i for i in range(0,500,10)]
+    save_string = '1wrong_ranking_cost_contour' #save_data("wrong_ranking_cost_contour")
+#    f = open(path+save_string+'.csv','a')
+#    columns = pd.DataFrame(data = np.array([["sigm","mum", "success_rate","avg_pval","avg_incrt", "avg_incrt_w_n","avg_correct_ranking"]]))
+#    columns.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
+
+    mu_m = [i for i in range(500,1000)]
+    sigma_m = [i for i in range(0,200)]
     number_of_options = 10
 
-    def mumf(mum,sigm):
-        count = 0
-        sum_pval = 0
-        avg_incrtness = 0
-        avg_incrtness_w_n = 0
-        avg_correct_ranking = 0
-        loop = 0
-        while loop <= 1000:
-            success,incrt,incrt_w_n,yes_test,max_rat_pval = main_process_flow(mu_m=mum,sigma_m=sigm,err_type=0)
-            flag = 0
-            for i in yes_test:
-                for j in i:
-                    if j[0][0]== np.nan or j[1]<0:
-                        flag = 1
-                        break
-            if max_rat_pval[0][0]!= np.nan and max_rat_pval[1]>0 and flag!=1:
-                sum_pval += max_rat_pval[0][1]
-            else:
-                sum_pval += 1
-
-            avg_incrtness += incrt
-            avg_incrtness_w_n += incrt_w_n
-
-            if incrt_w_n == 0:
-                avg_correct_ranking +=1
-            if success == 1:
-                count += 1
-            loop+=1
-
-        avg_pval = sum_pval/1000
-        avg_incrtness = avg_incrtness/1000
-        avg_incrtness_w_n = avg_incrtness_w_n/1000
-        avg_correct_ranking = avg_correct_ranking/1000
-        return {"sigm":sigm,"mum": mum, "success_rate":count/1000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n,'avg_correct_ranking':avg_correct_ranking}
-
-    opt_var = parallel(mumf,mu_m,sigma_m)
-    print(opt_var)
-    csv(data = opt_var,file = path+'1_WRC_contour.csv')
-#    op = pd.read_csv(path+'WRC_graphics_3.csv')
-#    opt_var = []
+#    def mumf(mum,sigm):
+#        count = 0
+#        sum_pval = 0
+#        avg_incrtness = 0
+#        avg_incrtness_w_n = 0
+#        avg_correct_ranking = 0
+#        loop = 0
+#        while loop <= 1000:
+#            success,incrt,incrt_w_n,yes_test,max_rat_pval = main_process_flow(mu_m=mum,sigma_m=sigm,err_type=0)
+#            flag = 0
+#            for i in yes_test:
+#                for j in i:
+#                    if j[0][0]== np.nan or j[1]<0:
+#                        flag = 1
+#                        break
+#            if max_rat_pval[0][0]!= np.nan and max_rat_pval[1]>0 and flag!=1:
+#                sum_pval += max_rat_pval[0][1]
+#            else:
+#                sum_pval += 1
 #
-#    for j in range(len(op['mum'])):
-#        a = {}
-#        for i in op:
-#            a[str(i)] = op[str(i)][j]
-#        opt_var.append(a)
+#            avg_incrtness += incrt
+#            avg_incrtness_w_n += incrt_w_n
+#
+#            if incrt_w_n == 0:
+#                avg_correct_ranking +=1
+#            if success == 1:
+#                count += 1
+#            loop+=1
+#
+#        avg_pval = sum_pval/1000
+#        avg_incrtness = avg_incrtness/1000
+#        avg_incrtness_w_n = avg_incrtness_w_n/1000
+#        avg_correct_ranking = avg_correct_ranking/1000
+#        v = {"sigm":sigm,"mum": mum, "success_rate":count/1000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n,'avg_correct_ranking':avg_correct_ranking}
+#        out = np.array([[sigm, mum, count/1000,avg_pval,avg_incrtness, avg_incrtness_w_n,avg_correct_ranking]])
+#        out = pd.DataFrame(data=out)
+#        out.to_csv(path+save_string+'.csv',mode='a',header= False,index = False)
+#        return v
+#
+#    opt_var = parallel(mumf,mu_m,sigma_m)
+#    csv(data = opt_var,file = path+save_string+'last.csv')
+    op = pd.read_csv(path+'1wrong_ranking_cost_contourlast.csv')
+    opt_var = []
 
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt",array=opt_var,x_name=r"$\sigma_m$",y_name=r"$\mu_m$",title='number of options = '+str(number_of_options),save_name=path+"1_sigma_m_vs_mu_m_vs_WRC_contour.pdf",bar_label='Wrong ranking cost')
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_correct_ranking",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"1_mu_m_vs_sigma_m_vs_RCR_contour.pdf",bar_label='Rate of correct ranking')
-    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt_w_n",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+"1_mu_m_vs_sigma_m_vs_WRC_contour_without_no.pdf",bar_label='Wrong ranking cost')
+    for j in range(len(op['mum'])):
+        a = {}
+        for i in op:
+            a[str(i)] = op[str(i)][j]
+        opt_var.append(a)
+
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt",array=opt_var,x_name=r"$\sigma_m$",y_name=r"$\mu_m$",title='number of options = '+str(number_of_options),save_name=path+save_string+"with_no.pdf",bar_label='Wrong ranking cost')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_correct_ranking",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+save_string+"RCR.pdf",bar_label='Rate of correct ranking')
+    graphicPlot(a=mu_m,b=sigma_m,zvar="avg_incrt_w_n",array=opt_var,x_name = r"$\sigma_m$",y_name=r"$\mu_m$",title="number of options = "+str(number_of_options),save_name=path+save_string+"without_no.pdf",bar_label='Wrong ranking cost')
 
 
 if pval_WRC_2D ==1:
+    save_string = save_data('pval_WRC_2D')
+    f = open(path + save_string+'.csv','a')
+    column = pd.DataFrame(data = np.array([["nop","mum","success_rate",'avg_pval','avg_incrt', 'avg_incrt_w_n']]))
+    column.to_csv(path+save_string+'.csv',mode='a',header=False,index=False)
+
     mu_m = [i for i in range(500,2000,20)]
     number_of_options = [2,5,10,20]
 
@@ -266,12 +289,14 @@ if pval_WRC_2D ==1:
         avg_pval = sum_pval/2000
         avg_incrtness = avg_incrtness/2000
         avg_incrtness_w_n = avg_incrtness_w_n/2000
+        v = pd.DataFrame(data=np.array([[nop,mum,count/2000,avg_pval,avg_incrtness,avg_incrtness_w_n]]))
+        v.to_csv(path+save_string+'.csv',mode = 'a',header=False,index=False)
         return {"nop":nop,"mum": mum,"success_rate":count/2000,'avg_pval':avg_pval,'avg_incrt':avg_incrtness, 'avg_incrt_w_n':avg_incrtness_w_n}
 
     opt_var = parallel(mumf,number_of_options,mu_m)
-    csv(data = opt_var,file = path+"2D_WRC_p-value.csv")
+    csv(data = opt_var,file = path+save_string+"last.csv")
     linePlot(data_len= number_of_options,data_legend = number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name=r'$\mu_m$',\
-        y_name = "P-values",title="Number of options",save_name=path + "mu_m_vs_pvalue_2D.pdf",y_var=["avg_pval"])
+        y_name = "P-values",title="Number of options",save_name=path + save_string+"Pval.pdf",y_var=["avg_pval"])
 
     linePlot(data_len= number_of_options,data_legend = number_of_options + number_of_options,array= opt_var,var= "nop", plt_var="mum",x_name=r'$\mu_m$',\
-        y_name = "Wrong ranking cost",title="Number of options",save_name=path + "mu_m_vs_WRC_2D.pdf",y_var=["avg_incrt",'avg_incrt_w_n'])
+        y_name = "Wrong ranking cost",title="Number of options",save_name=path + save_string+"WRC.pdf",y_var=["avg_incrt",'avg_incrt_w_n'])

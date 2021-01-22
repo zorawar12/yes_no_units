@@ -232,6 +232,7 @@ def save_data(save_string):
         if str(count)+'.txt'==i:
             count+=1
     save_string = str(count)+save_string
+    open(path+str(count)+'.txt')
     return save_string
 # Without assesment error Majority based decision
 if Without_assesment_error_Majority_based_decision==1:
