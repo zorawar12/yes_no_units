@@ -8,6 +8,12 @@ Yes_no_units.egg-info/top_level.txt
 hasegawa/__init__.py
 hasegawa/classynu.py
 hasegawa/ynu.py
+poisson/__init__.py
+poisson/poissonClass.py
+poisson/ynuPoisson.py
 src/__init__.py
-src/accounting_no.py
 src/classexploration.py
+src/hypo_WRC.py
+uniform/__init__.py
+uniform/classUniform.py
+uniform/ynuUniform.py

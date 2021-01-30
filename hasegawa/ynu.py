@@ -12,11 +12,14 @@ if __name__ != "__main__":
     import hasegawa.classynu as yn
 else:
     import classynu as yn
-from multiprocessing import Pool
+# from multiprocessing import Pool
+from ray.util.multiprocessing import Pool
 from operator import itemgetter
 import os
 import csv as c
+import ray
 
+ray.init(address='auto', redis_password='5241590000000000')
 
 number_of_options = 10                      #   Number of options to choose best one from
 mu_x = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
@@ -45,7 +48,7 @@ mu_h_vs_mu_x_vs_RCD = 0
 sig_h_vs_sig_x_vs_RCD = 0
 quorum_vs_RC_vs_sig_m = 0
 
-
+#@ray.remote
 def units(mu_m,sigma_m,number_of_options):
     """
     Arguments:
@@ -60,6 +63,7 @@ def units(mu_m,sigma_m,number_of_options):
             a[i] = np.array(np.round(np.random.normal(mu_m,sigma_m,number_of_options),decimals=0))
     return a
 
+#@ray.remote
 def threshold(m_units,h_type,mu_h,sigma_h):
     """
     Creates threshold distribution
@@ -74,6 +78,7 @@ def threshold(m_units,h_type,mu_h,sigma_h):
     """
     return np.round(np.random.normal(mu_h,sigma_h,abs(m_units)),decimals=h_type)
 
+#@ray.remote
 def quality(number_of_options,x_type,mu_x,sigma_x):
     """
     Creates quality stimulus
@@ -92,6 +97,7 @@ def quality(number_of_options,x_type,mu_x,sigma_x):
     QC.ref_highest_qual()
     return QC
 
+#@ray.remote
 def majority_decision(number_of_options,Dx,assigned_units,err_type,\
     mu_assessment_err,sigma_assessment_err,ref_highest_quality,\
     quorum = None):
@@ -147,6 +153,7 @@ def one_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type
     else:
         print("failed")
 
+#@ray.remote
 def multi_run(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m,h_type=h_type,mu_h=mu_h,sigma_h=sigma_h,\
     x_type=x_type,mu_x=mu_x,sigma_x=sigma_x,err_type=err_type,mu_assessment_err= mu_assessment_err,\
     sigma_assessment_err=sigma_assessment_err,quorum= None):
@@ -173,10 +180,12 @@ def parallel(func,a,b):
 
     opt_var = []
 
-    with Pool(20) as p:
+    with Pool(24,ray_address="auto") as p:
         opt_var = p.starmap(func,inp)
 
     return opt_var
+
+
 
 def linePlot(data_len,array,var,plt_var,x_name,y_name,title,save_name):
     c = ["blue","green","red","purple","brown","black"]
@@ -226,13 +235,13 @@ def csv(data,file):
     f.to_csv(file)
 
 def save_data(save_string):
-    check = os.listdir(path)
+    check = sorted(os.listdir(path))
     count = 0
     for i in check:
         if str(count)+'.txt'==i:
             count+=1
     save_string = str(count)+save_string
-    open(path+str(count)+'.txt')
+    open(path+str(count)+'.txt','+w')
     return save_string
 # Without assesment error Majority based decision
 if Without_assesment_error_Majority_based_decision==1:
@@ -248,13 +257,14 @@ if random_choice_many_best_option==1:
 
 # Majority based Rate of correct choice as a function of sigma_h for varying number of options
 if sig_h_vs_RCD_vs_nop==1:
-    save_string = save_data('mu_h_vs_RCD_vs_nop')
+    save_string = save_data('9999mu_h_vs_RCD_vs_nop')
     f = open(path+save_string+'.csv','a')
     columns = pd.DataFrame(data=np.array([["opt","sigma","success_rate"]]))
     columns.to_csv(path+save_string+'.csv',mode='a',header=False,index=False)
     sig_h = [0.0+i*0.01 for i in range(501)]
     opts = [2,10,40]
 
+    # @ray.remote
     def sighf(op,sigh):
         global f
         count = 0
@@ -274,6 +284,11 @@ if sig_h_vs_RCD_vs_nop==1:
     linePlot(data_len= opts,array= opt_var,var= "opt", plt_var="sigma",\
     x_name=r'$\sigma_h$',y_name="Rate of correct choice", title="Number of options",\
     save_name=path + save_string+".pdf")
+    # opt_var = parallel(sighf,opts,sig_h)
+    # csv(data=opt_var,file =path +save_string +'last.csv')
+    # linePlot(data_len= opts,array= opt_var,var= "opt", plt_var="sigma",\
+    # x_name=r'$\sigma_h$',y_name="Rate of correct choice", title="Number of options",\
+    # save_name=path + save_string+".pdf")
 
 # Majority based Rate of correct choice as a function of mu_h for varying number of options
 if mu_h_vs_RCD_vs_nop==1:

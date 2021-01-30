@@ -224,18 +224,29 @@ def linePlot(data_len,array,var,plt_var,x_name,y_name,title,save_name):
     plt.savefig(save_name,format = "pdf")
     plt.show()
 
-def graphicPlot(a,b,array,x_name,y_name,z_name,title,save_name,z_var = None):
+def graphicPlot(a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,z_var = None):
     fig, ax = plt.subplots()
     if z_var is not None:
         z = np.array(z_var).reshape(len(a),len(b))
     else:
         z = np.array(list(map(itemgetter("success_rate"), array))).reshape(len(a),len(b))
     cs = ax.contourf(b,a,z)
-    cbar = fig.colorbar(cs)
+    cbar = fig.colorbar(cs,orientation=cbar_loc)
     cbar.set_label(z_name)
+    rec_low = max(a[0],b[0]) + 0.5
+    rec_high = min(a[-1],b[-1]) - 0.5
+    ax.plot([rec_low,rec_low],[rec_low,rec_high],color= 'red',linewidth = 0.5)
+    ax.plot([rec_low,rec_high],[rec_low,rec_low],color= 'red',linewidth = 0.5)
+    ax.plot([rec_high,rec_low],[rec_high,rec_high],color= 'red',linewidth = 0.5)
+    ax.plot([rec_high,rec_high],[rec_low,rec_high],color= 'red',linewidth = 0.5)
+    ax.set_aspect('equal', 'box')
     plt.xlabel(x_name)
     plt.ylabel(y_name)
-    plt.legend(title = title)
+    plt.title(label= title)
+    plt.grid(b=True, which='major', color='black', linestyle='-',linewidth = 0.3,alpha=0.1)
+    plt.minorticks_on()
+    plt.grid(b=True, which='minor', color='black', linestyle='-',linewidth = 0.2,alpha=0.1)
+    
     plt.savefig(save_name,format = "pdf")
     plt.show()
 
@@ -263,6 +274,37 @@ def save_data(save_string):
     save_string = str(count)+save_string
     f1 = open(path+str(count)+'.txt','w')
     return save_string
+
+
+def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien):
+    op = pd.read_csv(path+file_name)
+    opt_var = []
+
+    for j in range(len(op[x_var_])):
+        a = {}
+        for i in op:
+            a[str(i)] = op[str(i)][j]
+        opt_var.append(a)
+    
+    z_var_ = "success_rate"
+    x = []
+    y = []
+    z = []
+    for i in opt_var:
+        if i[x_var_] not in x:
+            x.append(i[x_var_])
+        if i[y_var_] not in y:
+            y.append(i[y_var_])
+        z.append(i[z_var_])
+
+        print(np.round(len(z)/len(opt_var),decimals=2),end="\r")
+    print(np.round(len(z)/len(opt_var),decimals=2))
+    
+    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name="Rate of correct choice",title="Number_of_options = 10",save_name=path+save_plot+x_var_+y_var_+'RCD.pdf',cbar_loc=cbar_orien,z_var=z)
+
+
+def restart():
+    return cljhb
 
 # Without assesment error Majority based decision
 if Without_assesment_error_Majority_based_decision==1:
@@ -394,114 +436,59 @@ if mu_h_vs_sigma_h_vs_RCD==1:
 
 # Majority based Rate of correct choice as a function of mu_x for varying mu_h
 if mu_h_vs_mu_x_vs_RCD==1:
-    save_string = '0mu_h_vs_mu_x2_vs_RCD'  #  save_data('mu_h_vs_mu_x1_mu_x2_vs_RCD')
-#    f = open(path+save_string+'.csv','a')
-#    column = pd.DataFrame(data = np.array([["mux1","mux2","muh1","muh2","success_rate"]]))
-#    column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
+    # save_string = save_data('mu_h_vs_mu_x1_mu_x2_vs_RCD')
+    # f = open(path+save_string+'.csv','a')
+    # column = pd.DataFrame(data = np.array([['$\mu_{x_1}$','$\mu_{x_2}$','$\mu_{h_1}$','$\mu_{h_2}$',"success_rate"]]))
+    # column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
     mu_x = [np.round(-4.0+i*0.1,decimals=1) for i in range(201)]
     mu_h = [np.round(-4.0+i*0.1,decimals=1) for i in range(201)]
 
-#    def mux1muh1(muh,mux):
-#        count = 0
-#        for k in range(1000):
-#            success = multi_run(mu_h_1=muh,mu_h_2=muh,mu_x_1=mux,mu_x_2=2*mux,err_type=0)
-#            if success == 1:
-#                count += 1
-#        mu_va = {"mux1":mux,"mux2":2*mux,"muh1": muh,"muh2": muh,\
-#             "success_rate":count/1000}
-#        out = np.array([[mux,2*mux,muh,muh,count/1000]])
-#        out = pd.DataFrame(data=out)
-#        out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
-#        return mu_va
-#
-#    opt_var = parallel(mux1muh1,mu_h,mu_x)
-#    csv(data=opt_var,file=path+save_string+"last.csv")
-    op = pd.read_csv(path+'0mu_h_vs_mu_x1_mu_x2_vs_RCDlast.csv')
-    opt_var = []
+    # def mux1muh1(muh,mux):
+    #     mux1 = mux
+    #     mux2 = 2+mux
+    #     muh1 = muh
+    #     muh2 = muh
+    #     count = 0
+    #     for k in range(1000):
+    #         success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
+    #         if success == 1:
+    #             count += 1
+    #     mu_va = {'$\mu_{x_1}$':mux1,'$\mu_{x_2}$':mux2,'$\mu_{h_1}$': muh1,'$\mu_{h_2}$': muh2,"success_rate":count/1000}
+    #     out = np.array([[mux1,mux2,muh1,muh2,count/1000]])
+    #     out = pd.DataFrame(data=out)
+    #     out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
+    #     return mu_va
 
-    for j in range(len(op['muh1'])):
-        a = {}
-        for i in op:
-            a[str(i)] = op[str(i)][j]
-        opt_var.append(a)
-    x_var_ = "mux2"
-    y_var_ = "muh1"
-    z_var_ = "success_rate"
-    x = []
-    y = []
-    z = []
-    for i in opt_var:
-        if i[x_var_] not in x:
-            x.append(i[x_var_])
-        if i[y_var_] not in y:
-            y.append(i[y_var_])
-    for i in x:
-        for j in y:
-            for k in opt_var:
-                if k[x_var_] == i and k[y_var_] == j:
-                    z.append(k[z_var_])
-        print(np.round(len(z)/(len(x)*len(y)),decimals=2),end="\r")
-    print(np.round(len(z)/(len(x)*len(y)),decimals=2))
-    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'$\mu_{x_2}$',y_name=r"$\mu_{h}$",z_name="Rate of correct choice",\
-    title="Number_of_options = 10",save_name=path+save_string+".pdf",z_var=z)
+    # opt_var = parallel(mux1muh1,mu_h,mu_x)
+    # csv(data=opt_var,file=path+save_string+"last.csv")
+    data_visualize(file_name='1mu_h_vs_mu_x1_mu_x2_vs_RCDlast.csv',save_plot='1varying',x_var_='$\mu_{x_2}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical")
 
-#    graphicPlot(a= mu_h,b=mu_x ,array= opt_var,x_name=r'$\mu_{x_1}$',y_name=r"$\mu_{h}$",z_name="Rate of correct choice",title="Number_of_options = 10",save_name=path+save_string+"hx1.pdf")
 
 # Majority based Rate of correct choice as a function of sigma_x for varying sigma_h
 if sig_h_vs_sig_x_vs_RCD==1:
-    save_string = '1sig_h_vs_sig_x1_vs_RCD'  #  save_data('sig_h1_vs_sig_x_vs_RCD')
-#    f = open(path+save_string+'.csv','a')
-#    column = pd.DataFrame(data = np.array([["sigx1","sigx2","sigh1","sigh2","success_rate"]]))
-#    column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
+    # save_string = save_data('sig_h_vs_sig_x1_sig_x2_vs_RCD')
+    # f = open(path+save_string+'.csv','a')
+    # column = pd.DataFrame(data = np.array([["$\sigma_{x_1}$","$\sigma_{x_2}$","$\sigma_{h_1}$","$\sigma_{h_2}$","success_rate"]]))
+    # column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
     sig_x = [np.round(i*0.04,decimals=2) for i in range(101)]
     sig_h = [np.round(i*0.04,decimals=2) for i in range(101)]
 
-#    def sighf(sigh,sigx):
-#        count = 0
-#        for k in range(1000):
-#            success = multi_run(sigma_h_1=sigh,sigma_h_2 = sigh,sigma_x_1=sigx,sigma_x_2=2*sigx,err_type=0)
-#            if success == 1:
-#                count += 1
-#        sig_va = {"sigx1":sigx,"sigx2":2*sigx,"sigh1": sigh,"sigh2":sigh, "success_rate":count/1000}
-#        out = np.array([[sigx,2*sigx,sigh,sigh,count/1000]])
-#        out = pd.DataFrame(data=out)
-#        out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
-#        return sig_va
+    # def sighf(sigh,sigx):
+    #     count = 0
+    #     for k in range(1000):
+    #         success = multi_run(sigma_h_1=sigh,sigma_h_2 = sigh,sigma_x_1=sigx,sigma_x_2=2+sigx,err_type=0)
+    #         if success == 1:
+    #             count += 1
+    #     sig_va = {"$\sigma_{x_1}$":sigx,"$\sigma_{x_2}$":2+sigx,"$\sigma_{h_1}$": sigh,"$\sigma_{h_2}$":sigh, "success_rate":count/1000}
+    #     out = np.array([[sigx,2*sigx,sigh,sigh,count/1000]])
+    #     out = pd.DataFrame(data=out)
+    #     out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
+    #     return sig_va
 
-#    opt_var = parallel(sighf,sig_h,sig_x)
-#    csv(data=opt_var,file=path+save_string+"last.csv")
+    # opt_var = parallel(sighf,sig_h,sig_x)
+    # csv(data=opt_var,file=path+save_string+"last.csv")
+    data_visualize(file_name='1sig_h_vs_sig_x1_sig_x2_vs_RCDlast.csv',save_plot='1constant',x_var_='$\sigma_{x_2}$',y_var_='$\sigma_{h_1}$',cbar_orien="vertical")
 
-    op = pd.read_csv(path+'1sig_h_vs_sig_x1_sig_x2_vs_RCDlast.csv')
-    opt_var = []
-
-    for j in range(len(op['sigh1'])):
-        a = {}
-        for i in op:
-            a[str(i)] = op[str(i)][j]
-        opt_var.append(a)
-    x_var_ = "sigx1"
-    y_var_ = "sigh1"
-    z_var_ = "success_rate"
-    x = []
-    y = []
-    z = []
-    for i in opt_var:
-        if i[x_var_] not in x:
-            x.append(i[x_var_])
-        if i[y_var_] not in y:
-            y.append(i[y_var_])
-    for i in x:
-        for j in y:
-            for k in opt_var:
-                if k[x_var_] == i and k[y_var_] == j:
-                    z.append(k[z_var_])
-        print(np.round(len(z)/(len(x)*len(y)),decimals=2),end="\r")
-    print(np.round(len(z)/(len(x)*len(y)),decimals=2))
-    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'$\sigma_{x_1}$',y_name=r"$\sigma_{h}$",z_name="Rate of correct choice",\
-    title="Number_of_options = 10",save_name=path+save_string+".pdf",z_var=z)
-
-#    graphicPlot(a= sig_h,b=sig_x ,array= opt_var,x_name=r'$\sigma_{x_1}$',y_name=r"$\sigma_h$",z_name="Rate of correct choice",\
-#    title="Number_of_options = 10",save_name=path+save_string+".pdf")
 
 # Majority based Rate of choice as a function of quorum for varying sigma_m
 if quorum_vs_RC_vs_sig_m==1:

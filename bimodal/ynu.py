@@ -9,10 +9,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import classynu as yn
-from multiprocessing import Pool
+# from multiprocessing import Pool
+from ray.util.multiprocessing import Pool
 from operator import itemgetter
 import os
+import ray
 
+ray.init(address='auto', redis_password='5241590000000000')
 
 
 number_of_options = 10                      #   Number of options to choose best one from
@@ -199,7 +202,7 @@ def parallel(func,a,b):
 
     opt_var = []
 
-    with Pool(20) as p:
+    with Pool(24,ray_address="auto") as p:
         opt_var = p.starmap(func,inp)
 
     return opt_var
@@ -224,18 +227,29 @@ def linePlot(data_len,array,var,plt_var,x_name,y_name,title,save_name):
     plt.savefig(save_name,format = "pdf")
     plt.show()
 
-def graphicPlot(a,b,array,x_name,y_name,z_name,title,save_name,z_var = None):
+def graphicPlot(a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,z_var = None):
     fig, ax = plt.subplots()
     if z_var is not None:
         z = np.array(z_var).reshape(len(a),len(b))
     else:
         z = np.array(list(map(itemgetter("success_rate"), array))).reshape(len(a),len(b))
     cs = ax.contourf(b,a,z)
-    cbar = fig.colorbar(cs)
+    cbar = fig.colorbar(cs,orientation=cbar_loc)
     cbar.set_label(z_name)
+    rec_low = max(a[0],b[0]) + 0.5
+    rec_high = min(a[-1],b[-1]) - 0.5
+    ax.plot([rec_low,rec_low],[rec_low,rec_high],color= 'red',linewidth = 0.5)
+    ax.plot([rec_low,rec_high],[rec_low,rec_low],color= 'red',linewidth = 0.5)
+    ax.plot([rec_high,rec_low],[rec_high,rec_high],color= 'red',linewidth = 0.5)
+    ax.plot([rec_high,rec_high],[rec_low,rec_high],color= 'red',linewidth = 0.5)
+    ax.set_aspect('equal', 'box')
     plt.xlabel(x_name)
     plt.ylabel(y_name)
-    plt.legend(title = title)
+    plt.title(label= title)
+    plt.grid(b=True, which='major', color='black', linestyle='-',linewidth = 0.3,alpha=0.1)
+    plt.minorticks_on()
+    plt.grid(b=True, which='minor', color='black', linestyle='-',linewidth = 0.2,alpha=0.1)
+    
     plt.savefig(save_name,format = "pdf")
     plt.show()
 
@@ -253,6 +267,43 @@ def barPlot(quor,opt_v,save_name,correct):
 def csv(data,file):
     f = pd.DataFrame(data=data)
     f.to_csv(file)
+
+def save_data(save_string):
+    check = sorted(os.listdir(path))
+    count = 0
+    for i in check:
+        if str(count)+'.txt'==i:
+            count+=1
+    save_string = str(count)+save_string
+    f1 = open(path+str(count)+'.txt','w')
+    return save_string
+
+
+def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien):
+    op = pd.read_csv(path+file_name)
+    opt_var = []
+
+    for j in range(len(op[x_var_])):
+        a = {}
+        for i in op:
+            a[str(i)] = op[str(i)][j]
+        opt_var.append(a)
+    
+    z_var_ = "success_rate"
+    x = []
+    y = []
+    z = []
+    for i in opt_var:
+        if i[x_var_] not in x:
+            x.append(i[x_var_])
+        if i[y_var_] not in y:
+            y.append(i[y_var_])
+        z.append(i[z_var_])
+
+        print(np.round(len(z)/len(opt_var),decimals=2),end="\r")
+    print(np.round(len(z)/len(opt_var),decimals=2))
+    
+    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name="Rate of correct choice",title="Number_of_options = 10",save_name=path+save_plot+x_var_+y_var_+'RCD.pdf',cbar_loc=cbar_orien,z_var=z)
 
 
 # Without assesment error Majority based decision
@@ -385,51 +436,33 @@ if mu_h_vs_sigma_h_vs_RCD==1:
 
 # Majority based Rate of correct choice as a function of mu_x for varying mu_h
 if mu_h_vs_mu_x_vs_RCD==1:
-    mu_x = [np.round(-4.0+i*0.1,decimals=1) for i in range(201)]
-    mu_h = [np.round(-4.0+i*0.1,decimals=1) for i in range(201)]
+    save_string = save_data('mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD')
+    f = open(path+save_string+'.csv','a')
+    column = pd.DataFrame(data = np.array([['$\mu_{x_1}$','$\mu_{x_2}$','$\mu_{h_1}$','$\mu_{h_2}$',"success_rate"]]))
+    column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
+    mu_x = [np.round(-4.0+i*0.1,decimals=1) for i in range(5)]
+    mu_h = [np.round(-4.0+i*0.1,decimals=1) for i in range(5)]
 
-    # def mux1muh1(muh,mux):
-    #     count = 0
-    #     for k in range(1000):
-    #         success = multi_run(mu_h_1=muh,mu_h_2=2*muh,mu_x_1=mux,mu_x_2=2*mux,err_type=0)
-    #         if success == 1:
-    #             count += 1
-    #     mu_va = {"mux1":mux,"mux2":2*mux,"muh1": muh,"muh2": 2*muh,\
-    #          "success_rate":count/1000}
-    #     return mu_va
+    def mux1muh1(muh,mux):
+        mux1 = mux
+        mux2 = 2
+        muh1 = muh
+        muh2 = 2
+        count = 0
+        for k in range(1000):
+            success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
+            if success == 1:
+                count += 1
+        mu_va = {'$\mu_{x_1}$':mux1,'$\mu_{x_2}$':mux2,'$\mu_{h_1}$': muh1,'$\mu_{h_2}$': muh2,"success_rate":count/1000}
+        out = np.array([[mux1,mux2,muh1,muh2,count/1000]])
+        out = pd.DataFrame(data=out)
+        out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
+        return mu_va
 
-    # opt_var = parallel(mux1muh1,mu_h,mu_x)
-    # csv(data=opt_var,file=path+"mu_h_1_vs_mu_x_1_vs_RCD.csv")
-    op = pd.read_csv(path+'mu_h_1_vs_mu_x_1_vs_RCD_del_mu_varying.csv')
-    opt_var = []
+    opt_var1 = parallel(mux1muh1,mu_h,mu_x)
+    csv(data=opt_var1,file=path+save_string+"last.csv")
+    data_visualize(file_name=path+save_string+"last.csv",save_plot=save_string,x_var_='$\mu_{x_2}$',y_var_='$\mu_{h_2}$',cbar_orien="vertical")
 
-    for j in range(len(op['muh1'])):
-        a = {}
-        for i in op:
-            a[str(i)] = op[str(i)][j]
-        opt_var.append(a)
-    x_var_ = "mux2"
-    y_var_ = "muh2"
-    z_var_ = "success_rate"
-    x = []
-    y = []
-    z = []
-    for i in opt_var:
-        if i[x_var_] not in x:
-            x.append(i[x_var_])
-        if i[y_var_] not in y:
-            y.append(i[y_var_])
-    for i in x:
-        for j in y:
-            for k in opt_var:
-                if k[x_var_] == i and k[y_var_] == j:
-                    z.append(k[z_var_])
-        print(np.round(len(z)/(len(x)*len(y)),decimals=2),end="\r")
-    print(np.round(len(z)/(len(x)*len(y)),decimals=2))
-    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'$\mu_{x_2}$',y_name=r"$\mu_{h_2}$",z_name="Rate of correct choice",\
-    title="Number_of_options = 10",save_name=path+"checkmu_h_2_vs_mu_x_2_vs_RCD.pdf",z_var=z)
-
-    # graphicPlot(a= mu_h,b=mu_x ,array= opt_var,x_name=r'$\mu_{x_1}$',y_name=r"$\mu_{h_1}$",z_name="Rate of correct choice",title="Number_of_options = 10",save_name=path+"mu_h_1_vs_mu_x_1_vs_RCD.pdf")
 
 # Majority based Rate of correct choice as a function of sigma_x for varying sigma_h
 if sig_h_vs_sig_x_vs_RCD==1:
