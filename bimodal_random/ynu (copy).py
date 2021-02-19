@@ -61,9 +61,7 @@ def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
     Number of units to be assigned to an option choosen from N(mu_m,sigma_m) (array[1xn])
     """
     a = np.array([])
-    # peak_choice = np.random.randint(0,2,number_of_options)
-    peak_choice = np.array([1 for i in range(int(number_of_options/2))])
-    peak_choice = np.append(peak_choice,np.array([0 for i in range(number_of_options-len(peak_choice))]))
+    peak_choice = np.random.randint(0,2,number_of_options)
     for i in peak_choice:
         if i==0:
             k = np.round(np.random.normal(mu_m_1,sigma_m_1),decimals=0)
@@ -75,6 +73,7 @@ def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
             while k<=0:
                 k = np.round(np.random.normal(mu_m_2,sigma_m_2),decimals=0)
             a = np.append(a,k)
+
     return a.astype(int)
 
 def threshold(m_units,h_type,mu_h_1,sigma_h_1,mu_h_2,sigma_h_2):
@@ -90,14 +89,13 @@ def threshold(m_units,h_type,mu_h_1,sigma_h_1,mu_h_2,sigma_h_2):
     Array[1xm_units] of thesholds for each assigned set of units to options
     """
     a = []
-    # peak_choice = np.random.randint(0,2,m_units)
-    peak_choice = np.array([1 for i in range(int(number_of_options/2))])
-    peak_choice = np.append(peak_choice,np.array([0 for i in range(number_of_options-len(peak_choice))]))
+    peak_choice = np.random.randint(0,2,m_units)
     for i in peak_choice:
         if i==0:
             a.append(np.round(np.random.normal(mu_h_1,sigma_h_1),decimals=h_type))
         else:
             a.append(np.round(np.random.normal(mu_h_2,sigma_h_2),decimals=h_type))
+    # print(np.array(a).shape)
     return a
 
 def quality(number_of_options,x_type,mu_x_1,sigma_x_1,mu_x_2,sigma_x_2):
@@ -184,9 +182,10 @@ def multi_run(number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_
     units_distribution = []
     for i in pc:
         units_distribution.append(threshold(m_units=i,h_type=h_type,mu_h_1=mu_h_1,sigma_h_1=sigma_h_1,mu_h_2=mu_h_2,sigma_h_2=sigma_h_2))
+    # print(np.array(units_distribution).shape)
 
     qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x_1=mu_x_1,sigma_x_1=sigma_x_1,mu_x_2=mu_x_2,sigma_x_2=sigma_x_2)
-
+    # print(qc.Dx)
     dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,assigned_units= units_distribution,\
         err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,\
         ref_highest_quality=qc.ref_highest_quality,quorum=quorum)
@@ -464,7 +463,7 @@ if mu_h_vs_mu_x_vs_RCD==1:
 
     # opt_var1 = parallel(mux1muh1,mu_h,mu_x)
     # csv(data=opt_var1,file=path+save_string+"last.csv")
-    data_visualize(file_name="6mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD"+"last.csv",save_plot="6mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCDlast",x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="horizontal")
+    data_visualize(file_name="4mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD"+"last.csv",save_plot="4mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCDlast",x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="horizontal")
 
 
 # Majority based Rate of correct choice as a function of sigma_x for varying sigma_h
