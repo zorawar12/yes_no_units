@@ -107,8 +107,8 @@ class qualityControl:
         """
         self.Dx = []
         # peak_choice = np.random.randint(0,2,self.number_of_options)
-        peak_choice = np.array([1 for i in range(int(number_of_options/2))])
-        peak_choice = np.append(peak_choice,np.array([0 for i in range(number_of_options-len(peak_choice))]))
+        peak_choice = np.array([1 for i in range(int(self.number_of_options/2))])
+        peak_choice = np.append(peak_choice,np.array([0 for i in range(self.number_of_options-len(peak_choice))]))
         for i in peak_choice:
             if i==0:
                 self.Dx.append(np.round(np.random.normal(self.mu_x_1,self.sigma_x_1),decimals=self.x_type))
