@@ -50,8 +50,9 @@ mu_h_vs_sigma_h_vs_RCD = 0
 mu_h_vs_mu_x_vs_RCD = 1
 sig_h_vs_sig_x_vs_RCD = 0
 quorum_vs_RC_vs_sig_m = 0
-progress_count=0
-progress = []
+
+# progress_count=0
+# progress = []
 
 def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
     """
@@ -280,7 +281,7 @@ def save_data(save_string):
     return save_string
 
 
-def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None):
+def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None,num_of_opts=number_of_options):
     if data == None:
         op = pd.read_csv(path+file_name)
         opt_var = []
@@ -296,7 +297,7 @@ def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None):
     z_var_ = "success_rate"
     x = []
     y = []
-    z = []
+    z = []  # Make sure that it is in ordered form as y variable
     for i in opt_var:
         if i[x_var_] not in x:
             x.append(i[x_var_])
@@ -307,7 +308,7 @@ def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None):
         print(np.round(len(z)/len(opt_var),decimals=2),end="\r")
     print(np.round(len(z)/len(opt_var),decimals=2))
     
-    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name="Rate of correct choice",title="Number_of_options = 10",save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z)
+    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name="Rate of correct choice",title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z)
 
 
 # Without assesment error Majority based decision
@@ -440,36 +441,38 @@ if mu_h_vs_sigma_h_vs_RCD==1:
 
 # Majority based Rate of correct choice as a function of mu_x for varying mu_h
 if mu_h_vs_mu_x_vs_RCD==1:
-    save_string = save_data('mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD')
-    f = open(path+save_string+'.csv','a')
-    column = pd.DataFrame(data = np.array([['$\mu_{x_1}$','$\mu_{x_2}$','$\mu_{h_1}$','$\mu_{h_2}$',"success_rate"]]))
-    column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
-    mu_x = [np.round(-4.0+i*0.1,decimals=1) for i in range(201)]
-    mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
+    number_of_opts = [5]
+    for nop in number_of_opts:
+        number_of_options = nop
+        save_string = "4delta_mu_5_mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCDnop5"#save_data('delta_mu_5_mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
+        # f = open(path+save_string+'.csv','a')
+        # column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
+        # column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
+        # mu_x = [np.round(-4.0+i*0.1,decimals=1) for i in range(141)]
+        # mu_h = [np.round(i*0.1,decimals=1) for i in range(101)]
 
-    def mux1muh1(muh,mux):
-        global progress_count
-        mux1 = mux
-        mux2 = 2+mux
-        muh1 = muh
-        muh2 = 2+muh
-        count = 0
-        for k in range(1000):
-            success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
-            if success == 1:
-                count += 1
-        mu_va = {'$\mu_{x_1}$':mux1,'$\mu_{x_2}$':mux2,'$\mu_{h_1}$': muh1,'$\mu_{h_2}$': muh2,"success_rate":count/1000}
-        out = np.array([[mux1,mux2,muh1,muh2,count/1000]])
-        out = pd.DataFrame(data=out)
-        out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
-        progress_count += 1
-        progress.append(progress_count)
-        print("Percent of completion %3.2f\n"%(100*max(progress)/(len(mu_x)*len(mu_h))))
-        return mu_va
+        # def mux1muh1(muh,mux):
+        #     mux1 = mux
+        #     mux2 = 5+mux
+        #     muh1 = muh
+        #     muh2 = 5+muh
+        #     count = 0
+        #     for k in range(1000):
+        #         success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
+        #         if success == 1:
+        #             count += 1
+        #     mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/1000}
+        #     out = np.array([[muh1,muh2,mux1,mux2,count/1000]])
+        #     out = pd.DataFrame(data=out)
+        #     out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
+        #     # progress_count += 1
+        #     # progress.append(progress_count)
+        #     # print("Percent of completion %3.1f"%(100*max(progress)/(len(mu_x)*len(mu_h))))
+        #     return mu_va
 
-    opt_var1 = parallel(mux1muh1,mu_h,mu_x)
-    csv(data=opt_var1,file=path+save_string+"last.csv")
-    data_visualize(file_name=save_string+"last.csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="horizontal")
+        # opt_var1 = parallel(mux1muh1,mu_h,mu_x)
+        # csv(data=opt_var1,file=path+save_string+"last.csv")
+        data_visualize(file_name=save_string+"last.csv",save_plot=save_string,x_var_='$\mu_{x_2}$',y_var_='$\mu_{h_2}$',cbar_orien="vertical",num_of_opts=nop)
 
 
 # Majority based Rate of correct choice as a function of sigma_x for varying sigma_h
@@ -528,4 +531,3 @@ if quorum_vs_RC_vs_sig_m==1:
 # Decoy effect in individual decision and collective decision
 
 # %%
-
