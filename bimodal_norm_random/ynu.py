@@ -471,7 +471,7 @@ if mu_h_vs_mu_x_vs_RCD==1:
 
         # opt_var = parallel(mux1muh1,mu_h,mu_x)
         # csv(data=opt_var,file=path+save_string+"last.csv")
-        data_visualize(file_name=save_string+"last.csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_2}$',cbar_orien="vertical",num_of_opts=nop)
+        data_visualize(file_name=save_string+"last.csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop)
 
 
 # Majority based Rate of correct choice as a function of sigma_x for varying sigma_h
