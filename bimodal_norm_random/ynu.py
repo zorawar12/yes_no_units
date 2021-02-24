@@ -9,10 +9,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import classynu as yn
-from multiprocessing import Pool
+#from multiprocessing import Pool
+from ray.util.multiprocessing import Pool
 from operator import itemgetter
 import os
+import ray
 
+ray.init(address='auto', _redis_password='5241590000000000')
 
 
 number_of_options = 10                      #   Number of options to choose best one from
@@ -200,8 +203,10 @@ def parallel(func,a,b):
 
     opt_var = []
 
-    with Pool(8) as p:
+    with Pool(22,ray_address="auto") as p:
         opt_var = p.starmap(func,inp)
+    # for inps in inp:
+    #     opt_var.append(func(inps[0],inps[1]))
 
     return opt_var
 
@@ -266,7 +271,7 @@ def csv(data,file):
     f.to_csv(file)
 
 def save_data(save_string):
-    check = os.listdir(path)
+    check = np.sort(os.listdir(path))
     count = 0
     for i in check:
         if str(count)+'.txt'==i:
@@ -438,35 +443,35 @@ if mu_h_vs_sigma_h_vs_RCD==1:
 
 # Majority based Rate of correct choice as a function of mu_x for varying mu_h
 if mu_h_vs_mu_x_vs_RCD==1:
-    number_of_opts = [2,10]
+    number_of_opts = [20]
     for nop in number_of_opts:
-        number_of_options = nop
-        save_string = save_data('mu_h1_muh2_vs_mu_x_vs_RCD'+'nop'+str(nop))
-        f = open(path+save_string+'.csv','a')
-        column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
-        column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
-        mu_x = [np.round(-4.0+i*0.1,decimals=1) for i in range(141)]
-        mu_h = [np.round(i*0.1,decimals=1) for i in range(101)]
+        # number_of_options = nop
+        save_string = "5mu_h1_muh2_vs_mu_x_vs_RCDnop20"#save_data('mu_h1_muh2_vs_mu_x_vs_RCD'+'nop'+str(nop))
+        # f = open(path+save_string+'.csv','a')
+        # column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
+        # column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
+        # mu_x = [np.round(-4.0+i*0.1,decimals=1) for i in range(141)]
+        # mu_h = [np.round(i*0.1,decimals=1) for i in range(101)]
 
-        def mux1muh1(muh,mux):
-            mux1 = mux
-            mux2 = 2+mux
-            muh1 = muh
-            muh2 = 2+muh
-            count = 0
-            for k in range(1000):
-                success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
-                if success == 1:
-                    count += 1
-            mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/1000}
-            out = np.array([[muh1,muh2,mux1,mux2,count/1000]])
-            out = pd.DataFrame(data=out)
-            out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
-            return mu_va
+        # def mux1muh1(muh,mux):
+        #     mux1 = mux
+        #     mux2 = 5+mux
+        #     muh1 = muh
+        #     muh2 = muh
+        #     count = 0
+        #     for k in range(1000):
+        #         success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
+        #         if success == 1:
+        #             count += 1
+        #     mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/1000}
+        #     out = np.array([[muh1,muh2,mux1,mux2,count/1000]])
+        #     out = pd.DataFrame(data=out)
+        #     out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
+        #     return mu_va
 
-        opt_var = parallel(mux1muh1,mu_h,mu_x)
-        csv(data=opt_var,file=path+save_string+"last.csv")
-        data_visualize(file_name=save_string+"last.csv",save_plot=save_string,x_var_='$\mu_{x_2}$',y_var_='$\mu_{h_2}$',cbar_orien="vertical",num_of_opts=nop)
+        # opt_var = parallel(mux1muh1,mu_h,mu_x)
+        # csv(data=opt_var,file=path+save_string+"last.csv")
+        data_visualize(file_name=save_string+"last.csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_2}$',cbar_orien="vertical",num_of_opts=nop)
 
 
 # Majority based Rate of correct choice as a function of sigma_x for varying sigma_h
