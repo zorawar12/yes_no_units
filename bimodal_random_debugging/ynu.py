@@ -3,7 +3,6 @@
 # Author: Swadhin Agrawal
 # E-mail: swadhin20@iiserb.ac.in
 
-#%%
 import matplotlib
 import pandas as pd
 import numpy as np
@@ -13,35 +12,18 @@ from multiprocessing import Pool
 # from ray.util.multiprocessing import Pool
 from operator import itemgetter
 import os
+import time
 # import ray
 # from numba import jit,njit,vectorize,guvectorize
 # ray.init(address='auto', redis_password='5241590000000000')
-import time
 
-# number_of_options = None                      #   Number of options to choose best one from
-# mu_x_1 = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
-# sigma_x_1 = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
-# mu_x_2 = 1.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
-# sigma_x_2 = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
-# mu_h_1 = 0                                    #   Mean of distribution from which units threshold are sampled randomly
-# sigma_h_1 = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
-# mu_h_2 = 1                                    #   Mean of distribution from which units threshold are sampled randomly
-# sigma_h_2 = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
-# mu_m_1 = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
-# sigma_m_1 = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
-# mu_m_2 = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
-# sigma_m_2 = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
+
 mu_assessment_err = 0.0                     #   Mean of distribution from which units quality assessment error are sampled randomly
 sigma_assessment_err = 0.0                  #   Standard deviation of distribution from which units quality assessment error are sampled randomly
 x_type = 3                                  #   Number of decimal places of quality stimulus
 h_type = 3                                  #   Number of decimal places of units threshold
 err_type = 0                                #   Number of decimal places of quality assessment error
 path = os.getcwd() + "/results/"
-
-
-# Majority based Rate of correct choice as a function of mu_x for varying mu_h
-# if mu_h_vs_mu_x_vs_RCD==1:
-
 
 def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
     a = np.array([])
@@ -60,7 +42,6 @@ def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
     return a.astype(int)
 
 
-#%%
 def threshold(m_units,h_type,mu_h_1,sigma_h_1,mu_h_2,sigma_h_2):
     a = []
     peak_choice = np.random.randint(0,2,m_units)
@@ -253,7 +234,7 @@ for nop in number_of_opts:
         muh1 = muh
         muh2 = 2+muh
         count = 0
-        for k in range(1000):
+        for k in range(1200):
             success = multi_run(mu_h_1=muh1,sigma_h_1=sigma_h_1,sigma_h_2=sigma_h_2,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,sigma_x_1=sigma_x_1,sigma_x_2=sigma_x_1,err_type=0,number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,mu_m_2=mu_m_2,sigma_m_2=sigma_m_2)
             if success == 1:
                 count += 1
@@ -263,6 +244,3 @@ for nop in number_of_opts:
     opt_var1 = parallel(mux1muh1,mu_h,mu_x)
 
     data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop)
-
-
-# %%
