@@ -98,7 +98,7 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
         return result,quorum_reached,majority_dec
 
 
-def multi_run(number_of_options=number_of_options,mu_m_1=None,sigma_m_1=None,\
+def multi_run(number_of_options=None,mu_m_1=None,sigma_m_1=None,\
     mu_m_2=None,sigma_m_2=None,h_type=h_type,mu_h_1=None,sigma_h_1=None,mu_h_2=None,sigma_h_2=None,x_type=x_type,mu_x_1=None,sigma_x_1=None,mu_x_2=None,sigma_x_2=None,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,quorum= None):
     
     pc = units(number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,mu_m_2=mu_m_2,sigma_m_2=sigma_m_2)
@@ -230,6 +230,10 @@ def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =[],num_of_
 # Majority based Rate of correct choice as a function of mu_x for varying mu_h
 if mu_h_vs_mu_x_vs_RCD==1:
     number_of_opts = [2]
+    mu_m_1=100
+    sigma_m_1=0
+    mu_m_2=100
+    sigma_m_2=0
     for nop in number_of_opts:
         number_of_options = nop
         save_string = save_data('delta_mu_5_mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
@@ -246,7 +250,7 @@ if mu_h_vs_mu_x_vs_RCD==1:
             muh2 = 2+muh
             count = 0
             for k in range(1000):
-                success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
+                success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0,number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,mu_m_2=mu_m_2,sigma_m_2=sigma_m_2)
                 if success == 1:
                     count += 1
             mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/1000}
