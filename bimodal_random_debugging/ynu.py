@@ -234,27 +234,27 @@ if mu_h_vs_mu_x_vs_RCD==1:
     number_of_opts = [2]
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = "1delta_mu_5_mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCDnop2"#save_data('delta_mu_5_mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
-        # f = open(path+save_string+'.csv','a')
-        # column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
-        # column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
-        # mu_x = [np.round(1+i*0.1,decimals=1) for i in range(11)]
-        # mu_h = [np.round(1+i*0.1,decimals=1) for i in range(5)]
+        save_string = save_data('delta_mu_5_mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
+        f = open(path+save_string+'.csv','a')
+        column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
+        column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
+        mu_x = [np.round(1+i*0.1,decimals=1) for i in range(11)]
+        mu_h = [np.round(1+i*0.1,decimals=1) for i in range(5)]
 
-        # def mux1muh1(muh,mux):
-        #     mux1 = mux
-        #     mux2 = 2+mux
-        #     muh1 = muh
-        #     muh2 = 2+muh
-        #     count = 0
-        #     for k in range(1000):
-        #         success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
-        #         if success == 1:
-        #             count += 1
-        #     mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/1000}
-        #     return mu_va
+        def mux1muh1(muh,mux):
+            mux1 = mux
+            mux2 = 2+mux
+            muh1 = muh
+            muh2 = 2+muh
+            count = 0
+            for k in range(1000):
+                success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
+                if success == 1:
+                    count += 1
+            mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/1000}
+            return mu_va
 
-        # opt_var1 = parallel(mux1muh1,mu_h,mu_x)
-        # csv(data=opt_var1,file=path+save_string+"last.csv")
+        opt_var1 = parallel(mux1muh1,mu_h,mu_x)
+        csv(data=opt_var1,file=path+save_string+"last.csv")
         data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop)
 
