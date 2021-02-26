@@ -63,9 +63,9 @@ def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
     Number of units to be assigned to an option choosen from N(mu_m,sigma_m) (array[1xn])
     """
     a = np.array([])
-    # peak_choice = np.random.randint(0,2,number_of_options)
-    peak_choice = np.array([1 for i in range(int(number_of_options/2))])
-    peak_choice = np.append(peak_choice,np.array([0 for i in range(number_of_options-len(peak_choice))]))
+    peak_choice = np.random.randint(0,2,number_of_options)
+    # peak_choice = np.array([1 for i in range(int(number_of_options/2))])
+    # peak_choice = np.append(peak_choice,np.array([0 for i in range(number_of_options-len(peak_choice))]))
     for i in peak_choice:
         if i==0:
             k = np.round(np.random.normal(mu_m_1,sigma_m_1),decimals=0)
@@ -92,9 +92,9 @@ def threshold(m_units,h_type,mu_h_1,sigma_h_1,mu_h_2,sigma_h_2):
     Array[1xm_units] of thesholds for each assigned set of units to options
     """
     a = []
-    # peak_choice = np.random.randint(0,2,m_units)
-    peak_choice = np.array([1 for i in range(int(number_of_options/2))])
-    peak_choice = np.append(peak_choice,np.array([0 for i in range(number_of_options-len(peak_choice))]))
+    peak_choice = np.random.randint(0,2,m_units)
+    # peak_choice = np.array([1 for i in range(int(number_of_options/2))])
+    # peak_choice = np.append(peak_choice,np.array([0 for i in range(number_of_options-len(peak_choice))]))
     for i in peak_choice:
         if i==0:
             a.append(np.round(np.random.normal(mu_h_1,sigma_h_1),decimals=h_type))

@@ -9,13 +9,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import classynu as yn
-# from multiprocessing import Pool
-from ray.util.multiprocessing import Pool
+from multiprocessing import Pool
+# from ray.util.multiprocessing import Pool
 from operator import itemgetter
 import os
-import ray
+# import ray
 
-ray.init(address='auto', redis_password='5241590000000000')
+# ray.init(address='auto', redis_password='5241590000000000')
 
 
 number_of_options = 10                      #   Number of options to choose best one from
@@ -51,6 +51,8 @@ mu_h_vs_mu_x_vs_RCD = 1
 sig_h_vs_sig_x_vs_RCD = 0
 quorum_vs_RC_vs_sig_m = 0
 
+# progress_count=0
+# progress = []
 
 def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
     """
@@ -62,6 +64,8 @@ def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
     """
     a = np.array([])
     peak_choice = np.random.randint(0,2,number_of_options)
+    # peak_choice = np.array([1 for i in range(int(number_of_options/2))])
+    # peak_choice = np.append(peak_choice,np.array([0 for i in range(number_of_options-len(peak_choice))]))
     for i in peak_choice:
         if i==0:
             k = np.round(np.random.normal(mu_m_1,sigma_m_1),decimals=0)
@@ -73,7 +77,6 @@ def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
             while k<=0:
                 k = np.round(np.random.normal(mu_m_2,sigma_m_2),decimals=0)
             a = np.append(a,k)
-
     return a.astype(int)
 
 def threshold(m_units,h_type,mu_h_1,sigma_h_1,mu_h_2,sigma_h_2):
@@ -90,12 +93,13 @@ def threshold(m_units,h_type,mu_h_1,sigma_h_1,mu_h_2,sigma_h_2):
     """
     a = []
     peak_choice = np.random.randint(0,2,m_units)
+    # peak_choice = np.array([1 for i in range(int(number_of_options/2))])
+    # peak_choice = np.append(peak_choice,np.array([0 for i in range(number_of_options-len(peak_choice))]))
     for i in peak_choice:
         if i==0:
             a.append(np.round(np.random.normal(mu_h_1,sigma_h_1),decimals=h_type))
         else:
             a.append(np.round(np.random.normal(mu_h_2,sigma_h_2),decimals=h_type))
-    # print(np.array(a).shape)
     return a
 
 def quality(number_of_options,x_type,mu_x_1,sigma_x_1,mu_x_2,sigma_x_2):
@@ -182,10 +186,9 @@ def multi_run(number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_
     units_distribution = []
     for i in pc:
         units_distribution.append(threshold(m_units=i,h_type=h_type,mu_h_1=mu_h_1,sigma_h_1=sigma_h_1,mu_h_2=mu_h_2,sigma_h_2=sigma_h_2))
-    # print(np.array(units_distribution).shape)
 
     qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x_1=mu_x_1,sigma_x_1=sigma_x_1,mu_x_2=mu_x_2,sigma_x_2=sigma_x_2)
-    # print(qc.Dx)
+
     dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,assigned_units= units_distribution,\
         err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,\
         ref_highest_quality=qc.ref_highest_quality,quorum=quorum)
@@ -200,7 +203,7 @@ def parallel(func,a,b):
 
     opt_var = []
 
-    with Pool(28,ray_address="auto") as p:
+    with Pool(8) as p:#,ray_address="auto") as p:
         opt_var = p.starmap(func,inp)
     # for inps in inp:
     #     opt_var.append(func(inps[0],inps[1]))
@@ -278,7 +281,7 @@ def save_data(save_string):
     return save_string
 
 
-def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None):
+def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None,num_of_opts=number_of_options):
     if data == None:
         op = pd.read_csv(path+file_name)
         opt_var = []
@@ -294,7 +297,7 @@ def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None):
     z_var_ = "success_rate"
     x = []
     y = []
-    z = []
+    z = []  # Make sure that it is in ordered form as y variable
     for i in opt_var:
         if i[x_var_] not in x:
             x.append(i[x_var_])
@@ -305,7 +308,7 @@ def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None):
         print(np.round(len(z)/len(opt_var),decimals=2),end="\r")
     print(np.round(len(z)/len(opt_var),decimals=2))
     
-    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name="Rate of correct choice",title="Number_of_options = 10",save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z)
+    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name="Rate of correct choice",title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z)
 
 
 # Without assesment error Majority based decision
@@ -438,32 +441,35 @@ if mu_h_vs_sigma_h_vs_RCD==1:
 
 # Majority based Rate of correct choice as a function of mu_x for varying mu_h
 if mu_h_vs_mu_x_vs_RCD==1:
-    # save_string = save_data('mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD')
-    # f = open(path+save_string+'.csv','a')
-    # column = pd.DataFrame(data = np.array([['$\mu_{x_1}$','$\mu_{x_2}$','$\mu_{h_1}$','$\mu_{h_2}$',"success_rate"]]))
-    # column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
-    # mu_x = [np.round(-4.0+i*0.1,decimals=1) for i in range(40)]
-    # mu_h = [np.round(-4.0+i*0.1,decimals=1) for i in range(40)]
+    number_of_opts = [2]
+    for nop in number_of_opts:
+        number_of_options = nop
+        save_string = save_data('delta_mu_5_mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
+        f = open(path+save_string+'.csv','a')
+        column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
+        column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
+        mu_x = [np.round(-4.0+i*0.1,decimals=1) for i in range(101)]
+        mu_h = [np.round(i*0.1,decimals=1) for i in range(101)]
 
-    # def mux1muh1(muh,mux):
-    #     mux1 = mux
-    #     mux2 = 2
-    #     muh1 = muh
-    #     muh2 = 2
-    #     count = 0
-    #     for k in range(1000):
-    #         success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
-    #         if success == 1:
-    #             count += 1
-    #     mu_va = {'$\mu_{x_1}$':mux1,'$\mu_{x_2}$':mux2,'$\mu_{h_1}$': muh1,'$\mu_{h_2}$': muh2,"success_rate":count/1000}
-    #     out = np.array([[mux1,mux2,muh1,muh2,count/1000]])
-    #     out = pd.DataFrame(data=out)
-    #     out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
-    #     return mu_va
+        def mux1muh1(muh,mux):
+            mux1 = mux
+            mux2 = 2+mux
+            muh1 = muh
+            muh2 = 2+muh
+            count = 0
+            for k in range(1000):
+                success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0)
+                if success == 1:
+                    count += 1
+            mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/1000}
+            out = np.array([[muh1,muh2,mux1,mux2,count/1000]])
+            out = pd.DataFrame(data=out)
+            out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
+            return mu_va
 
-    # opt_var1 = parallel(mux1muh1,mu_h,mu_x)
-    # csv(data=opt_var1,file=path+save_string+"last.csv")
-    data_visualize(file_name="4mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD"+"last.csv",save_plot="4mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCDlast",x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="horizontal")
+        opt_var1 = parallel(mux1muh1,mu_h,mu_x)
+        csv(data=opt_var1,file=path+save_string+"last.csv")
+        data_visualize(file_name=save_string+"last.csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop)
 
 
 # Majority based Rate of correct choice as a function of sigma_x for varying sigma_h
@@ -522,4 +528,3 @@ if quorum_vs_RC_vs_sig_m==1:
 # Decoy effect in individual decision and collective decision
 
 # %%
-
