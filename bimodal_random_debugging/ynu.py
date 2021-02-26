@@ -18,19 +18,19 @@ from numba import jit,njit,vectorize,guvectorize
 # ray.init(address='auto', redis_password='5241590000000000')
 import time
 
-number_of_options = 10                      #   Number of options to choose best one from
-mu_x_1 = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
-sigma_x_1 = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
-mu_x_2 = 1.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
-sigma_x_2 = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
-mu_h_1 = 0                                    #   Mean of distribution from which units threshold are sampled randomly
-sigma_h_1 = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
-mu_h_2 = 1                                    #   Mean of distribution from which units threshold are sampled randomly
-sigma_h_2 = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
-mu_m_1 = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
-sigma_m_1 = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
-mu_m_2 = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
-sigma_m_2 = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
+# number_of_options = None                      #   Number of options to choose best one from
+# mu_x_1 = 0.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
+# sigma_x_1 = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
+# mu_x_2 = 1.0                                  #   Mean of distribution from which quality stimulus are sampled randomly
+# sigma_x_2 = 1.0                               #   Standard deviation of distribution from which quality stimulus are sampled randomly
+# mu_h_1 = 0                                    #   Mean of distribution from which units threshold are sampled randomly
+# sigma_h_1 = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
+# mu_h_2 = 1                                    #   Mean of distribution from which units threshold are sampled randomly
+# sigma_h_2 = 1.0                               #   Standard deviation of distribution from which units threshold are sampled randomly
+# mu_m_1 = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
+# sigma_m_1 = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
+# mu_m_2 = 100                                  #   Mean of distribution from which number of units to be assigned to an option are sampled randomly
+# sigma_m_2 = 0                                 #   Standard deviation of distribution from which number of units to be assigned to an option are sampled randomly
 mu_assessment_err = 0.0                     #   Mean of distribution from which units quality assessment error are sampled randomly
 sigma_assessment_err = 0.0                  #   Standard deviation of distribution from which units quality assessment error are sampled randomly
 x_type = 3                                  #   Number of decimal places of quality stimulus
@@ -63,8 +63,6 @@ def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
 def threshold(m_units,h_type,mu_h_1,sigma_h_1,mu_h_2,sigma_h_2):
     a = []
     peak_choice = np.random.randint(0,2,m_units)
-    # peak_choice = np.array([1 for i in range(int(number_of_options/2))])
-    # peak_choice = np.append(peak_choice,np.array([0 for i in range(number_of_options-len(peak_choice))]))
     for i in peak_choice:
         if i==0:
             a.append(np.round(np.random.normal(mu_h_1,sigma_h_1),decimals=h_type))
@@ -100,8 +98,8 @@ def majority_decision(number_of_options,Dx,assigned_units,err_type,\
         return result,quorum_reached,majority_dec
 
 
-def multi_run(number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,\
-    mu_m_2=mu_m_2,sigma_m_2=sigma_m_2,h_type=h_type,mu_h_1=mu_h_1,sigma_h_1=sigma_h_1,mu_h_2=mu_h_2,sigma_h_2=sigma_h_2,x_type=x_type,mu_x_1=mu_x_1,sigma_x_1=sigma_x_1,mu_x_2=mu_x_2,sigma_x_2=sigma_x_2,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,quorum= None):
+def multi_run(number_of_options=number_of_options,mu_m_1=None,sigma_m_1=None,\
+    mu_m_2=None,sigma_m_2=None,h_type=h_type,mu_h_1=None,sigma_h_1=None,mu_h_2=None,sigma_h_2=None,x_type=x_type,mu_x_1=None,sigma_x_1=None,mu_x_2=None,sigma_x_2=None,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,quorum= None):
     
     pc = units(number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,mu_m_2=mu_m_2,sigma_m_2=sigma_m_2)
 
