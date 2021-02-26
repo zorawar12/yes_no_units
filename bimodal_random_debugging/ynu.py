@@ -126,12 +126,12 @@ def parallel(func,a,b):
     # for inps in inp:
     #     opt_var.append(func(inps[0],inps[1]))
     opt_var = []
-    main_output = np.array([])
+    main_output = []
     progress = 0
     for i in range(0,len(inp),20):
         with Pool(20) as p:#,ray_address="auto") as p:
             opt_var = p.starmap(func,inp[i:i+20])
-        main_output = np.concatenate((main_output,opt_var))
+        main_output += opt_var
         out = pd.DataFrame(data=opt_var)
         out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
         progress +=1
@@ -199,8 +199,8 @@ def save_data(save_string):
     return save_string
 
 
-def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None,num_of_opts=number_of_options):
-    if data == None:
+def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =[],num_of_opts=number_of_options):
+    if data == []:
         op = pd.read_csv(path+file_name)
         opt_var = []
 
@@ -238,7 +238,7 @@ if mu_h_vs_mu_x_vs_RCD==1:
         f = open(path+save_string+'.csv','a')
         column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
         column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
-        mu_x = [np.round(1+i*0.1,decimals=1) for i in range(11)]
+        mu_x = [np.round(1+i*0.1,decimals=1) for i in range(5)]
         mu_h = [np.round(1+i*0.1,decimals=1) for i in range(5)]
 
         def mux1muh1(muh,mux):
@@ -255,6 +255,6 @@ if mu_h_vs_mu_x_vs_RCD==1:
             return mu_va
 
         opt_var1 = parallel(mux1muh1,mu_h,mu_x)
-        csv(data=opt_var1,file=path+save_string+"last.csv")
+
         data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop)
 
