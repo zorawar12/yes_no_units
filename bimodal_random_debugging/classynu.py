@@ -8,7 +8,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from numba import jit,njit,vectorize
+# from numba import jit,njit,vectorize
 
 #%%
 
@@ -39,7 +39,7 @@ class Decision_making:
         Returns success/failure of decision making when there are multiple correct decisions as per the units
         """
         available_opt = np.array(np.where(np.array(self.votes) == max(self.votes)))[0]
-        print([max(self.votes)])
+        # print([max(self.votes)])
         opt_choosen = np.random.randint(0,len(available_opt))
         if available_opt[opt_choosen] ==  ref_highest_quality:
             return 1

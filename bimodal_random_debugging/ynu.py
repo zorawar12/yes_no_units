@@ -14,7 +14,7 @@ from multiprocessing import Pool
 from operator import itemgetter
 import os
 # import ray
-from numba import jit,njit,vectorize,guvectorize
+# from numba import jit,njit,vectorize,guvectorize
 # ray.init(address='auto', redis_password='5241590000000000')
 import time
 
@@ -39,7 +39,8 @@ err_type = 0                                #   Number of decimal places of qual
 path = os.getcwd() + "/results/"
 
 
-mu_h_vs_mu_x_vs_RCD = 1
+# Majority based Rate of correct choice as a function of mu_x for varying mu_h
+# if mu_h_vs_mu_x_vs_RCD==1:
 
 
 def units(mu_m_1,sigma_m_1,mu_m_2,sigma_m_2,number_of_options):
@@ -102,11 +103,11 @@ def multi_run(number_of_options=None,mu_m_1=None,sigma_m_1=None,\
     mu_m_2=None,sigma_m_2=None,h_type=h_type,mu_h_1=None,sigma_h_1=None,mu_h_2=None,sigma_h_2=None,x_type=x_type,mu_x_1=None,sigma_x_1=None,mu_x_2=None,sigma_x_2=None,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,quorum= None):
     
     pc = units(number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,mu_m_2=mu_m_2,sigma_m_2=sigma_m_2)
-
+    # print(pc)
     units_distribution = []
+    
     for i in pc:
         units_distribution.append(threshold(m_units=i,h_type=h_type,mu_h_1=mu_h_1,sigma_h_1=sigma_h_1,mu_h_2=mu_h_2,sigma_h_2=sigma_h_2))
-
     qc = quality(number_of_options=number_of_options,x_type=x_type,mu_x_1=mu_x_1,sigma_x_1=sigma_x_1,mu_x_2=mu_x_2,sigma_x_2=sigma_x_2)
 
     dec = majority_decision(number_of_options=number_of_options,Dx = qc.Dx,assigned_units= units_distribution,\
@@ -187,17 +188,17 @@ def csv(data,file):
     f.to_csv(file)
 
 def save_data(save_string):
-    check = np.sort(os.listdir(path))
+    check = np.sort(np.array([int(f) for f in os.listdir(path) if '.' not in f]))
     count = 0
     for i in check:
-        if str(count)==i:
+        if count==i:
             count+=1
     save_string = str(count)+save_string
     f1 = open(path+str(count),'w')
     return save_string
 
 
-def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =[],num_of_opts=number_of_options):
+def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =[],num_of_opts=None):
     if data == []:
         op = pd.read_csv(path+file_name)
         opt_var = []
@@ -227,36 +228,41 @@ def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =[],num_of_
     graphicPlot(a= y,b=x ,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name="Rate of correct choice",title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z)
 
 
-# Majority based Rate of correct choice as a function of mu_x for varying mu_h
-if mu_h_vs_mu_x_vs_RCD==1:
-    number_of_opts = [2]
-    mu_m_1=100
-    sigma_m_1=0
-    mu_m_2=100
-    sigma_m_2=0
-    for nop in number_of_opts:
-        number_of_options = nop
-        save_string = save_data('delta_mu_5_mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
-        f = open(path+save_string+'.csv','a')
-        column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
-        column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
-        mu_x = [np.round(1+i*0.1,decimals=1) for i in range(5)]
-        mu_h = [np.round(1+i*0.1,decimals=1) for i in range(5)]
+number_of_opts = [2]
+mu_m_1=100
+sigma_m_1=0
+mu_m_2=100
+sigma_m_2=0
+sigma_h_1 = 1
+sigma_h_2=1
+sigma_x_1=1
+sigma_x_2=1
 
-        def mux1muh1(muh,mux):
-            mux1 = mux
-            mux2 = 2+mux
-            muh1 = muh
-            muh2 = 2+muh
-            count = 0
-            for k in range(1000):
-                success = multi_run(mu_h_1=muh1,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,err_type=0,number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,mu_m_2=mu_m_2,sigma_m_2=sigma_m_2)
-                if success == 1:
-                    count += 1
-            mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/1000}
-            return mu_va
+for nop in number_of_opts:
+    number_of_options = nop
+    save_string = save_data('delta_mu_5_mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
+    f = open(path+save_string+'.csv','a')
+    column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
+    column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
+    mu_x = [np.round(1+i*0.1,decimals=1) for i in range(10)]
+    mu_h = [np.round(1+i*0.1,decimals=1) for i in range(10)]
 
-        opt_var1 = parallel(mux1muh1,mu_h,mu_x)
+    def mux1muh1(muh,mux):
+        mux1 = mux
+        mux2 = 2+mux
+        muh1 = muh
+        muh2 = 2+muh
+        count = 0
+        for k in range(1000):
+            success = multi_run(mu_h_1=muh1,sigma_h_1=sigma_h_1,sigma_h_2=sigma_h_2,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,sigma_x_1=sigma_x_1,sigma_x_2=sigma_x_1,err_type=0,number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,mu_m_2=mu_m_2,sigma_m_2=sigma_m_2)
+            if success == 1:
+                count += 1
+        mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/1000}
+        return mu_va
 
-        data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop)
+    opt_var1 = parallel(mux1muh1,mu_h,mu_x)
 
+    data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop)
+
+
+# %%
