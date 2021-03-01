@@ -106,17 +106,16 @@ def parallel(func,a,b):
     # for inps in inp:
     #     opt_var.append(func(inps[0],inps[1]))
     opt_var = []
-    main_output = []
     progress = 0
-    for i in range(0,len(inp),20):
-        with Pool(20) as p:#,ray_address="auto") as p:
-            opt_var = p.starmap(func,inp[i:i+20])
-        main_output += opt_var
+    for i in range(0,len(inp),batch_size):
+        with Pool(12) as p:#,ray_address="auto") as p:
+            opt_var = p.starmap(func,inp[i:i+batch_size])
         out = pd.DataFrame(data=opt_var)
         out.to_csv(path+save_string+'.csv',mode = 'a',header = False, index=False)
         progress +=1
-        print(100*progress/(len(inp)/20))
-    return main_output
+        print("\r Percent of input processed : {}%".format(np.round(100*progress/(len(inp)/batch_size)),decimals=1), end="")
+
+
 
 def linePlot(data_len,array,var,plt_var,x_name,y_name,title,save_name):
     c = ["blue","green","red","purple","brown","black"]
@@ -144,7 +143,7 @@ def graphicPlot(a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,z_var = 
         z = np.array(z_var).reshape(len(a),len(b))
     else:
         z = np.array(list(map(itemgetter("success_rate"), array))).reshape(len(a),len(b))
-    cs = ax.contourf(b,a,z)
+    cs = ax.pcolormesh(b,a,z)
     cbar = fig.colorbar(cs,orientation=cbar_loc)
     cbar.set_label(z_name)
     rec_low = max(a[0],b[0]) + 0.5
@@ -161,7 +160,7 @@ def graphicPlot(a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,z_var = 
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='black', linestyle='-',linewidth = 0.2,alpha=0.1)
     plt.savefig(save_name,format = "pdf")
-    plt.show()
+    # plt.show()
 
 
 def csv(data,file):
@@ -179,8 +178,8 @@ def save_data(save_string):
     return save_string
 
 
-def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =[],num_of_opts=None):
-    if data == []:
+def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None,num_of_opts=None):
+    if data == None:
         op = pd.read_csv(path+file_name)
         opt_var = []
 
@@ -194,6 +193,7 @@ def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =[],num_of_
     
     z_var_ = "success_rate"
     x = []
+    x1 = []
     y = []
     z = []  # Make sure that it is in ordered form as y variable
     for i in opt_var:
@@ -206,10 +206,30 @@ def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =[],num_of_
         print(np.round(len(z)/len(opt_var),decimals=2),end="\r")
     print(np.round(len(z)/len(opt_var),decimals=2))
     
-    graphicPlot(a= y,b=x ,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name="Rate of correct choice",title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z)
+    graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name="Rate of correct choice",title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z)
+
+def gaussian(x,mu,sigma):
+    k = 1/np.sqrt(2*np.pi*sigma)
+    return k*np.exp(((x-mu)**2)/(2*sigma**2))
+
+def finding_gaussian_base(area,mu,sigma):
+    step = 0.001
+    x = mu
+    if area<0.5:
+        dummy_area = 0.5
+        while dummy_area-area <0.0001:
+            dummy_area -= gaussian(x,mu,sigma)*step
+            x -= step
+    elif area>0.5:
+        dummy_area = 0.5
+        while dummy_area-area <0.0001:
+            dummy_area += gaussian(x,mu,sigma)*step
+            x += step
+    return x
 
 
-number_of_opts = [2]
+
+number_of_opts = [5,10,20]
 mu_m_1=100
 sigma_m_1=0
 mu_m_2=100
@@ -218,29 +238,31 @@ sigma_h_1 = 1
 sigma_h_2=1
 sigma_x_1=1
 sigma_x_2=1
-
+runs = 500
+batch_size = 50
+delta_mu = 5
 for nop in number_of_opts:
     number_of_options = nop
-    save_string = save_data('delta_mu_5_mu_h_1_mu_h_2_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
+    save_string = save_data('delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
     f = open(path+save_string+'.csv','a')
     column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
     column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
-    mu_x = [np.round(1+i*0.1,decimals=1) for i in range(10)]
-    mu_h = [np.round(1+i*0.1,decimals=1) for i in range(10)]
+    mu_x = [np.round(i*0.1,decimals=1) for i in range(151)]
+    mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
 
     def mux1muh1(muh,mux):
         mux1 = mux
-        mux2 = 2+mux
+        mux2 = delta_mu+mux
         muh1 = muh
-        muh2 = 2+muh
+        muh2 = muh
         count = 0
-        for k in range(1200):
+        for k in range(runs):
             success = multi_run(mu_h_1=muh1,sigma_h_1=sigma_h_1,sigma_h_2=sigma_h_2,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,sigma_x_1=sigma_x_1,sigma_x_2=sigma_x_1,err_type=0,number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,mu_m_2=mu_m_2,sigma_m_2=sigma_m_2)
             if success == 1:
                 count += 1
-        mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/1000}
+        mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/runs}
         return mu_va
 
-    opt_var1 = parallel(mux1muh1,mu_h,mu_x)
+    parallel(mux1muh1,mu_h,mu_x)
 
     data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop)
