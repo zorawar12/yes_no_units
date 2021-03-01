@@ -210,59 +210,80 @@ def data_visualize(file_name,save_plot,x_var_,y_var_,cbar_orien,data =None,num_o
 
 def gaussian(x,mu,sigma):
     k = 1/np.sqrt(2*np.pi*sigma)
-    return k*np.exp(((x-mu)**2)/(2*sigma**2))
+    return k*np.exp(-((x-mu)**2)/(2*sigma**2))
 
 def finding_gaussian_base(area,mu,sigma):
-    step = 0.001
+    step = 0.00001
     x = mu
+    x_ = []
+    fx_ = []
     if area<0.5:
         dummy_area = 0.5
-        while dummy_area-area <0.0001:
-            dummy_area -= gaussian(x,mu,sigma)*step
+        while dummy_area-area >0.000:
+            x_.append(x)
+            fx = gaussian(x,mu,sigma)
+            fx_.append(fx)
+            dummy_area -= fx*step
             x -= step
+        print(dummy_area)
     elif area>0.5:
         dummy_area = 0.5
-        while dummy_area-area <0.0001:
-            dummy_area += gaussian(x,mu,sigma)*step
+        while dummy_area-area <0.000:
+            x_.append(x)
+            fx = gaussian(x,mu,sigma)
+            fx_.append(fx)
+            dummy_area += fx*step
             x += step
-    return x
+        print(dummy_area)
+    return [x_,fx_]
+
+[p_x,p_fx] = finding_gaussian_base(1.000000000,5,1)
+[n_x,n_fx] = finding_gaussian_base(0.0000000,5,1)
+[intermediate_x,intermediate_fx] = finding_gaussian_base(0.1,5,1)
+x = [n_x[i] for i in range(len(n_x)-1,-1,-1)]+p_x
+fx = [n_fx[i] for i in range(len(n_fx)-1,-1,-1)]+p_fx
+f,ax = plt.subplots()
+plt.plot(x,fx)
+x = np.array(x)[:x.index(intermediate_x[-1])]
+fx = np.array(fx)[:fx.index(intermediate_fx[-1])]
+ax.fill_between(x,0,fx,facecolor='orange')
+plt.show()
 
 
+# number_of_opts = [5,10,20]
+# mu_m_1=100
+# sigma_m_1=0
+# mu_m_2=100
+# sigma_m_2=0
+# sigma_h_1 = 1
+# sigma_h_2=1
+# sigma_x_1=1
+# sigma_x_2=1
+# runs = 500
+# batch_size = 50
+# delta_mu = 5
+# for nop in number_of_opts:
+#     number_of_options = nop
+#     save_string = save_data('delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
+#     f = open(path+save_string+'.csv','a')
+#     column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
+#     column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
+#     mu_x = [np.round(i*0.1,decimals=1) for i in range(151)]
+#     mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
 
-number_of_opts = [5,10,20]
-mu_m_1=100
-sigma_m_1=0
-mu_m_2=100
-sigma_m_2=0
-sigma_h_1 = 1
-sigma_h_2=1
-sigma_x_1=1
-sigma_x_2=1
-runs = 500
-batch_size = 50
-delta_mu = 5
-for nop in number_of_opts:
-    number_of_options = nop
-    save_string = save_data('delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop))
-    f = open(path+save_string+'.csv','a')
-    column = pd.DataFrame(data = np.array([['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"]]))
-    column.to_csv(path+save_string+'.csv',mode='a',header= False,index=False)
-    mu_x = [np.round(i*0.1,decimals=1) for i in range(151)]
-    mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
+#     def mux1muh1(muh,mux):
+#         mux1 = mux
+#         mux2 = delta_mu+mux
+#         muh1 = muh
+#         muh2 = muh
+#         count = 0
+#         for k in range(runs):
+#             success = multi_run(mu_h_1=muh1,sigma_h_1=sigma_h_1,sigma_h_2=sigma_h_2,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,sigma_x_1=sigma_x_1,sigma_x_2=sigma_x_1,err_type=0,number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,mu_m_2=mu_m_2,sigma_m_2=sigma_m_2)
+#             if success == 1:
+#                 count += 1
+#         mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/runs}
+#         return mu_va
 
-    def mux1muh1(muh,mux):
-        mux1 = mux
-        mux2 = delta_mu+mux
-        muh1 = muh
-        muh2 = muh
-        count = 0
-        for k in range(runs):
-            success = multi_run(mu_h_1=muh1,sigma_h_1=sigma_h_1,sigma_h_2=sigma_h_2,mu_h_2=muh2,mu_x_1=mux1,mu_x_2=mux2,sigma_x_1=sigma_x_1,sigma_x_2=sigma_x_1,err_type=0,number_of_options=number_of_options,mu_m_1=mu_m_1,sigma_m_1=sigma_m_1,mu_m_2=mu_m_2,sigma_m_2=sigma_m_2)
-            if success == 1:
-                count += 1
-        mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/runs}
-        return mu_va
+#     parallel(mux1muh1,mu_h,mu_x)
 
-    parallel(mux1muh1,mu_h,mu_x)
-
-    data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop)
+#     data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop)
