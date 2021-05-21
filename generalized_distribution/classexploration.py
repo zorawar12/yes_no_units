@@ -414,9 +414,12 @@ class Visualization:
         m, b = np. polyfit(x, y_ransac, 1)
 
         if plot_type == 'graphics':
-            self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = [m,b],line_labels=line_labels)
+            self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z,line_labels=line_labels)
 
-            self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_fit.pdf',cbar_loc=cbar_orien,z_var=z_best,z_max_fit = [m,b])
+            self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_fit.pdf',cbar_loc=cbar_orien,z_var=z_best)
+            # self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = [m,b],line_labels=line_labels)
+
+            # self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_fit.pdf',cbar_loc=cbar_orien,z_var=z_best,z_max_fit = [m,b])
 
             if gaussian ==1:
                 wf = workFlow()
@@ -621,7 +624,7 @@ class Visualization:
         for i in range(len(z_name)):
             plt.plot(x,[y[s] for s in range(i*len(x),(i+1)*len(x),1)],c = c[i],linewidth = 1,linestyle=line_style[i%len(line_style)])
 
-        plt.ylim(top = 0.3,bottom = -0.1)
+        plt.ylim(top = 1,bottom = -0.1)
         plt.xlabel(x_name)
         plt.ylabel(y_name)
         plt.legend(z_name,markerscale = 3, title = title)
@@ -631,7 +634,7 @@ class Visualization:
     # def graphicPlot(self,a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,options_line,line_labels,z_var = None):
     #     plt.legend()
 
-    def graphicPlot(self,a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,z_var,z_max_fit,options_line=None,line_labels=None):
+    def graphicPlot(self,a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,z_var,z_max_fit=None,options_line=None,line_labels=None):
         fig, ax = plt.subplots()
         z = np.array(z_var).reshape(len(a),len(b))
         cs = ax.pcolormesh(b,a,z)
@@ -640,12 +643,14 @@ class Visualization:
             for j in range(len(options_line)):
                 ESM = [options_line[j][0]*bb+options_line[j][1] for bb in b]
                 plt.plot(b,ESM,color = colors[j],linestyle='-',label = str(line_labels[j]))
-
-        z_best_fit = [z_max_fit[0]*bb+z_max_fit[1] for bb in b]
-        plt.plot(b,z_best_fit,color = 'white',label = "Least Square fit HRCC ")
+        if z_max_fit != None:
+            z_best_fit = [z_max_fit[0]*bb+z_max_fit[1] for bb in b]
+            plt.plot(b,z_best_fit,color = 'white',label = "Least Square fit HRCC ")
         cbar = fig.colorbar(cs,orientation=cbar_loc)
         cbar.set_label(z_name,fontsize=14)
-        cbar. set_ticks(np.arange(min(z_var),max(z_var),(max(z_var)-min(z_var))/10))
+        # cbar. set_ticks(np.arange(min(z_var),max(z_var),(max(z_var)-min(z_var))/10))
+        cbar. set_ticks(np.arange(0,1,0.1))
+        cbar.set_clim(0,1)
         ax.set_aspect('equal', 'box')
         # ax.xaxis.set_ticks(np.arange(min(b),max(b),int(max(b)-min(b))/10))
         # ax.yaxis.set_ticks(np.arange(min(a),max(a),int(max(a)-min(a))/10))
