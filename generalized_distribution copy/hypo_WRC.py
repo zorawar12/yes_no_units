@@ -314,7 +314,7 @@ if bimodal_x_normal_h==1:
     mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = '3delta_mu_5_mu_h_vs_mu_x1_mu_x2_vs_RCDnop2'#'delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop)
+        save_string = '6delta_mu_5_mu_h_vs_mu_x1_mu_x2_vs_RCDnop20'#'delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop)
         # save_string = save_data(save_string,continuation)
 
         def mux1muh1(muh,mux):

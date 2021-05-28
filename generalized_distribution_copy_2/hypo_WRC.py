@@ -1,3 +1,4 @@
+#!/Users/swadhinagrawal/opt/anaconda3/envs/cdm/bin/python
 # Nature of collective-decision making by simple yes/no decision units.
 
 # Author: Swadhin Agrawal
@@ -21,9 +22,9 @@ pval_WRC_normal = 0
 pval_WRC_bimodal_x_gaussian_h = 0
 pval_WRC_uniform_x_gaussian_h = 0
 
-bimodal_x_normal_h = 1
+bimodal_x_normal_h = 0
 mu_x_vs_mu_h_vs_RCD = 0
-uniform_x_normal_h = 0
+uniform_x_normal_h = 1
 uniform_x_uniform_h = 0
 bimodal_x_normal_h_sigma = 0
 uniform_x_normal_h_sigma = 0
@@ -298,7 +299,7 @@ if pval_WRC_uniform_x_gaussian_h ==1:
 
 if bimodal_x_normal_h==1:
     continuation = False
-    number_of_opts = [2]
+    number_of_opts = [20]
     mu_m_1=100
     sigma_m_1=0
     mu_m_2=100
@@ -314,7 +315,7 @@ if bimodal_x_normal_h==1:
     mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = '3delta_mu_5_mu_h_vs_mu_x1_mu_x2_vs_RCDnop2'#'delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop)
+        save_string = '6delta_mu_5_mu_h_vs_mu_x1_mu_x2_vs_RCDnop20'#'delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop)
         # save_string = save_data(save_string,continuation)
 
         def mux1muh1(muh,mux):
@@ -386,7 +387,7 @@ if bimodal_x_normal_h_sigma==1:
 
 if uniform_x_normal_h==1:
     continuation = False
-    number_of_opts = [2]
+    number_of_opts = [10]
     mu_m_1=100
     sigma_m_1=0
     mu_m_2=100
@@ -404,7 +405,7 @@ if uniform_x_normal_h==1:
     mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = '17uniform_normal_mu_h_vs_mu_x1_mu_x2_vs_RCDnop2'#'uniform_normal'+'_mu_h_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop)
+        save_string = '16uniform_uniform_mu_h_vs_mu_x1_mu_x2_vs_RCDnop10'#'uniform_normal'+'_mu_h_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop)
         # save_string = save_data(save_string,continuation)
 
         def mux1muh1(muh,mux):
@@ -424,7 +425,7 @@ if uniform_x_normal_h==1:
 
         # parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
 
-        vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=[number_of_options,number_of_options+1],z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2,gaussian=0,uniform=0)
+        vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=[number_of_options,number_of_options+1],z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2,gaussian=0,uniform=1)
 
         message = str(nop)+' number of options simulation finished'
         pushbullet_message('Python Code','Results out! '+message)

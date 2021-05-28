@@ -1,8 +1,10 @@
+#!/Users/swadhinagrawal/opt/anaconda3/envs/cdm/bin/python
 # Author: Swadhin Agrawal
 # E-mail: swadhin20@iiserb.ac.in
 
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.core.numeric import count_nonzero
 from statsmodels.stats.proportion import proportions_ztest as pt
 import pandas as pd
 import os
@@ -10,11 +12,26 @@ import time
 import random_number_generator as rng
 from numba import  njit
 from sklearn import linear_model
-
+import random
+import requests
+import json
 
 path = os.getcwd() + "/results/"
 
 points = []
+
+
+def pushbullet_message(title, body):
+    msg = {"type": "note", "title": title, "body": body}
+    TOKEN = 'o.YlTBKuQWnkOUsCP9ZxzWC9pvFNz1G0mi'
+    resp = requests.post('https://api.pushbullet.com/v2/pushes', 
+                         data=json.dumps(msg),
+                         headers={'Authorization': 'Bearer ' + TOKEN,
+                                  'Content-Type': 'application/json'})
+    if resp.status_code != 200:
+        raise Exception('Error',resp.status_code)
+    else:
+        print ('Message sent')
 
 class Decision_making:
     def __init__(self,number_of_options,err_type,mu_assessment_err,sigma_assessment_err):
@@ -123,6 +140,47 @@ class Decision_making:
             result = 0
             return result,quorum_reached
 
+
+class Qranking:
+    def __init__(self,number_of_options):
+        self.n = number_of_options
+        self.ref_rank = np.zeros((self.n,self.n))
+        self.exp_rank = np.zeros((self.n,self.n))
+        self.exp_rank_w_n = np.zeros((self.n,self.n))
+
+    def ref_ranking(self,oq,y_ratios,no_votes):
+        for i in range(len(oq)):
+            for j in range(i+1,self.n):
+                if oq[i]>oq[j]:
+                    self.ref_rank[i,j] = 1
+                if y_ratios[i]>y_ratios[j] and no_votes[i]<no_votes[j]:
+                    self.exp_rank[i,j] = 1
+                elif y_ratios[i]<y_ratios[j] and no_votes[i]>no_votes[j]:
+                    self.exp_rank[i,j] = 0
+                elif y_ratios[i]<y_ratios[j] and no_votes[i]<no_votes[j]:
+                    self.exp_rank[i,j] = 0.5
+                elif y_ratios[i]>y_ratios[j] and no_votes[i]>no_votes[j]:
+                    self.exp_rank[i,j] = 0.5
+
+    def ref_ranking_w_n(self,oq,y_ratios,no_votes):
+        for i in range(len(oq)):
+            for j in range(i+1,self.n):
+                if y_ratios[i]>y_ratios[j]:
+                    self.exp_rank_w_n[i,j] = 1
+                elif y_ratios[i]<y_ratios[j]:
+                    self.exp_rank_w_n[i,j] = 0
+                else:
+                    self.exp_rank_w_n[i,j] = 0.5
+
+    def incorrectness_cost(self,exp_rank):
+        measure_of_incorrectness = 0
+        for i in range(self.n):
+            for j in range(i+1,self.n):
+                measure_of_incorrectness += abs(exp_rank[i,j]-self.ref_rank[i,j])
+        measure_of_incorrectness = 2*measure_of_incorrectness/(self.n*(self.n - 1))
+        return measure_of_incorrectness           #   Higher measure of incorrectness more bad is the ranking by units votes
+
+
 class workFlow:
     def __init__(self):
         pass
@@ -185,43 +243,55 @@ class workFlow:
             assigned_units=units_distribution,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,ref_highest_quality=ref,quorum=quorum,pc=pc)
 
         return dec
-    
+
+
+class Prediction:
     @staticmethod
     @njit
     def gaussian(x,mu,sigma):
         f = 0
         for i in range(len(mu)):
-            k = 1/np.sqrt(2*np.pi*sigma[i])
+            k = 1/(np.sqrt(2*np.pi)*sigma[i])
             f += k*np.exp(-((x-mu[i])**2)/(2*sigma[i]**2))
         return f
 
     @staticmethod
     @njit
     def uniform(x,mu,sigma):
+        # Note here that mu contains lower bound and sigma contains upper bound instead of 
+        # mean and standard deviation of the distribution
         f = 0
         for i in range(len(mu)):
-            a = np.sqrt(3)*(mu[i]/np.sqrt(3) + sigma[i])
-            b = np.sqrt(3)*(mu[i]/np.sqrt(3) - sigma[i])
+            a = (mu[i] - np.sqrt(3)*sigma[i])
+            b = (mu[i] + np.sqrt(3)*sigma[i])
             f += 1/abs(a-b)
         return f
 
     @staticmethod
     @njit
-    def ICPDF(area,mu,sigma,start,stop,step,x,pdf):
+    def ICPDF(area,mu,stop,step,x,pdf):
         # import faulthandler; faulthandler.enable()
-        if mu[0]!= mu[1]:
-            if area<=0.25:
-                dummy_area =0.25
-                x_ = mu[0]
-            elif area>0.25 and area<=0.5:
-                dummy_area =0.5
-                x_ = (mu[0]+mu[1])/2
-            elif area>0.5 and area<=0.75:
-                dummy_area =0.75
-                x_ = mu[1]
-            elif area>0.75 and area<=1:
-                dummy_area =1
-                x_ = stop
+        if len(mu)>1:    
+            if mu[0]!= mu[1]:
+                if area<=0.25:
+                    dummy_area =0.25
+                    x_ = mu[0]
+                elif area>0.25 and area<=0.5:
+                    dummy_area =0.5
+                    x_ = (mu[0]+mu[1])/2
+                elif area>0.5 and area<=0.75:
+                    dummy_area =0.75
+                    x_ = mu[1]
+                elif area>0.75 and area<=1:
+                    dummy_area =1
+                    x_ = stop
+            else:
+                if area<=0.5:
+                    dummy_area =0.5
+                    x_ = mu[0]
+                else:
+                    dummy_area =1
+                    x_ = stop
         else:
             if area<=0.5:
                 dummy_area =0.5
@@ -230,11 +300,7 @@ class workFlow:
                 dummy_area =1
                 x_ = stop
         
-        for i in range(len(x)):
-            if x[i] == x_:
-                count = i
-        
-        # print([x[count-1],x[count],x[count+1],x_,pdf[count-1],pdf[count],pdf[count+1]])
+        count = np.argmin(np.abs(x-x_))
 
         while dummy_area-area>0.0005:
             dummy_area -= pdf[count]*step
@@ -243,369 +309,263 @@ class workFlow:
         return x_
 
     @staticmethod
-    def ESM_onebyn_method1(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
+    def mean_ESM_ES2M(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
         x_1 = []
         x_2 = []
+        step = 0.0001
         for i in x:
             if x_var_ == '$\mu_{x_1}$':
                 mu = [i,i+delta_mu]
             else:
                 mu = [i-delta_mu,i]
             sigma = [sigma_x_1,sigma_x_2]
-            start = mu[0] - sigma[0]-5
-            stop = mu[-1] + sigma[1]+5
-            step = 0.0001
-            dis_x = np.round(np.arange(start,stop,step),decimals=4)
+            start = np.sum(mu)/len(mu) - np.sum(sigma)-5
+            stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
+            dis_x = np.arange(start,stop,step)
             pdf =  [distribution_fn(i,mu,sigma) for i in dis_x]
             pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
             
-            _1 = ICPDF_fn(1.0-(1.0/(line_labels[0])),mu,sigma,start,stop,step,dis_x,pdf)
-            _2 = ICPDF_fn(1.0-(1.0/(line_labels[1])),mu,sigma,start,stop,step,dis_x,pdf)
+            _1 = ICPDF_fn(1.0-(1.0/(line_labels[0])),mu,stop,step,dis_x,pdf)
+            _2 = ICPDF_fn(1.0-(1.0/(line_labels[1])),mu,stop,step,dis_x,pdf)
             x_1.append(_1)
             x_2.append(_2)
             print(np.round(len(x_1)/len(x),decimals=2),end="\r")
         return [x_1,x_2]
 
     @staticmethod
-    def ESM_oneby2n_method2(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
+    def ESM_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
         x_1 = []
         x_2 = []
+        step = 0.0001
         for i in x:
             if x_var_ == '$\mu_{x_1}$':
                 mu = [i,i+delta_mu]
             else:
                 mu = [i-delta_mu,i]
             sigma = [sigma_x_1,sigma_x_2]
-            start = mu[0] - sigma[0]-5
-            stop = mu[-1] + sigma[1]+5
-            step = 0.0001
-            dis_x = np.round(np.arange(start,stop,step),decimals=4)
+            start = np.sum(mu)/len(mu) - np.sum(sigma)-5
+            stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
+            dis_x = np.arange(start,stop,step)
             pdf =  [distribution_fn(i,mu,sigma) for i in dis_x]
             pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
             
-            _1 = ICPDF_fn(1.0-(1.0/(2*line_labels[0])),mu,sigma,start,stop,step,dis_x,pdf)
-            _2 = ICPDF_fn(1.0-(1.0/(2*line_labels[1])),mu,sigma,start,stop,step,dis_x,pdf)
+            _1 = ICPDF_fn(1.0-(1.0/(2*line_labels[0])),mu,stop,step,dis_x,pdf)
+            _2 = ICPDF_fn(1.0-(1.0/(2*line_labels[1])),mu,stop,step,dis_x,pdf)
             x_1.append(_1)
             x_2.append(_2)
             print(np.round(len(x_1)/len(x),decimals=2),end="\r")
         return [x_1,x_2]
-    
-    @staticmethod
-    def ESM_integral_method3(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
-        delta_area = 0.01
-        areas = np.round(np.arange(0,1,delta_area),decimals=2)
-        expected_highest_quality = []
-        for i in x:
-            integral = 0
-            if x_var_ == '$\mu_{x_1}$':
-                mu = [i,i+delta_mu]
-            else:
-                mu = [i-delta_mu,i]
-            sigma = [sigma_x_1,sigma_x_2]
-            start = mu[0] - sigma[0]-5
-            stop = mu[-1] + sigma[1]+5
-            step = 0.0001
-            dis_x = np.round(np.arange(start,stop,step),decimals=6)
-            pdf =  [distribution_fn(i,mu,sigma) for i in dis_x]
-            pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
-            for area in areas:
-                inverse_P =  ICPDF_fn(area**(1/line_labels[0]),mu,sigma,start,stop,step,dis_x,pdf)
-                integral += np.round(inverse_P,decimals=2)*delta_area
-                integral = np.round(integral,decimals=2)
-            expected_highest_quality.append(integral)
-            print(np.round(len(expected_highest_quality)/len(x),decimals=2),end="\r")
-        return expected_highest_quality
-    
-    @staticmethod
-    def ES2M_method2(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
-        delta_area = 0.01
-        areas = np.round(np.arange(0,1,delta_area),decimals=2)
-        expected_highest_quality = []
-        for i in x:
-            integral = 0
-            if x_var_ == '$\mu_{x_1}$':
-                mu = [i,i+delta_mu]
-            else:
-                mu = [i-delta_mu,i]
-            sigma = [sigma_x_1,sigma_x_2]
-            start = mu[0] - sigma[0]-5
-            stop = mu[-1] + sigma[1]+5
-            step = 0.0001
-            dis_x = np.round(np.arange(start,stop,step),decimals=6)
-            pdf =  [distribution_fn(i,mu,sigma) for i in dis_x]
-            pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
-            for area in areas:
-                inverse_P =  ICPDF_fn(area**(1/(line_labels[0]-1)),mu,sigma,start,stop,step,dis_x,pdf)
-                integral += (area**(1/(line_labels[0]-1)))*np.round(inverse_P,decimals=2)*delta_area
-                integral = np.round(integral,decimals=2)
-            expected_highest_quality.append((integral*line_labels[0]/(line_labels[0]-1)))
-            print(np.round(len(expected_highest_quality)/len(x),decimals=2),end="\r")
-        return expected_highest_quality
 
     @staticmethod
-    def ES2M_method1(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
+    def ES2M_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
         x_1 = []
         x_2 = []
+        step = 0.0001
         for i in x:
             if x_var_ == '$\mu_{x_1}$':
                 mu = [i,i+delta_mu]
             else:
                 mu = [i-delta_mu,i]
             sigma = [sigma_x_1,sigma_x_2]
-            start = mu[0] - sigma[0]-5
-            stop = mu[-1] + sigma[1]+5
-            step = 0.0001
-            dis_x = np.round(np.arange(start,stop,step),decimals=4)
+            start = np.sum(mu)/len(mu) - np.sum(sigma)-5
+            stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
+            
+            dis_x = np.arange(start,stop,step)
             pdf =  [distribution_fn(i,mu,sigma) for i in dis_x]
             pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
             
-            _1 = ICPDF_fn(1.0-(3.0/(2*line_labels[0])),mu,sigma,start,stop,step,dis_x,pdf)
-            _2 = ICPDF_fn(1.0-(3.0/(2*line_labels[1])),mu,sigma,start,stop,step,dis_x,pdf)
+            _1 = ICPDF_fn(1.0-(3.0/(2*line_labels[0])),mu,stop,step,dis_x,pdf)
+            _2 = ICPDF_fn(1.0-(3.0/(2*line_labels[1])),mu,stop,step,dis_x,pdf)
             x_1.append(_1)
             x_2.append(_2)
             print(np.round(len(x_1)/len(x),decimals=2),end="\r")
         return [x_1,x_2]
+
 
 class Visualization:
+    def optimization(self,x,y,z,max_iter=10000,d = 0.2):
+        min_z = min(z)
+        iterations = 0
+        goodness_of_fit = -np.Inf
+        
+        while iterations<1000:
+            selected = np.random.randint(0,len(x),int(2*len(x)/3))
+            maybeInliers_x = []
+            maybeInliers_y = []
+            maybeInliers_z = []
+            for i in selected:
+                maybeInliers_z.append(z[i])
+                maybeInliers_x.append(x[i])
+                maybeInliers_y.append(y[i])
+            
+            [slope,intercept] = np.polyfit(maybeInliers_x,maybeInliers_y,deg=1)
+            bestFit = [slope,intercept]
+            alsoInliers = []
+            set = range(len(x))
+            for point1 in np.setdiff1d(set,selected):
+                dis = abs(slope*x[point1]-y[point1]+intercept)/((slope*slope + 1)**0.5)
+                if dis<=d:
+                    alsoInliers.append(point1)
+
+            inliers_x = maybeInliers_x + [x[i] for i in alsoInliers]
+            inliers_y = maybeInliers_y + [y[i] for i in alsoInliers]
+            
+            for i in alsoInliers:
+                maybeInliers_z.append(z[i])
+            inliers_z = maybeInliers_z
+            params = np.polyfit(inliers_x,inliers_y,deg=1)
+            thisgoodness = sum(maybeInliers_z)/len(maybeInliers_z)
+            if thisgoodness > goodness_of_fit:
+                bestFit = params
+                goodness_of_fit = thisgoodness
+
+            iterations += 1
+        print([bestFit,goodness_of_fit])
+        return [bestFit,np.round(goodness_of_fit,decimals=3)]
+
     def data_visualize(self,file_name,save_plot,x_var_,y_var_,z_var_,plot_type,gaussian=1,uniform=0,cbar_orien=None,line_labels=None,sigma_x_1=None,\
         data =None,num_of_opts=None,delta_mu=None,sigma_x_2 = None,z1_var_=None):
-        if data == None:
-            op = pd.read_csv(path+file_name)
-            opt_var = []
+        # gives data as array
 
-            for j in range(len(op[x_var_])):
-                a = {}
-                for i in op:
-                    a[str(i)] = op[str(i)][j]
-                opt_var.append(a)
-        else:
-            opt_var = data
-        
+        op = pd.read_csv(path+file_name)
+        opt_var = []
+
+        for j in range(len(op[x_var_])):
+            a = {}
+            for i in op:
+                a[str(i)] = op[str(i)][j]
+            opt_var.append(a)
+
         x = []
         y = []
         z = []  # Make sure that it is in ordered form as y variable (i.e. 1st column of data file)
         z1 = []
-        z_best = []
         z_max = max(op[z_var_])
+        z_best = []
+        z_only_best = []
         xa = []
         ya = []
+
         for i in opt_var:
+            # x,y,z variables
             if i[x_var_] not in x:
                 x.append(i[x_var_])
             if i[y_var_] not in y:
                 y.append(i[y_var_])
             z.append(i[z_var_])
 
+            # x,y,z for only HRCC
             if i[z_var_] >= z_max-0.05:
-                z_best.append(1)
+                z_best.append(i[z_var_])
+                z_only_best.append(i[z_var_])
                 xa.append(i[x_var_])
                 ya.append(i[y_var_])
             else:
-                z_best.append(0)
+                z_best.append(min(z))
+            
             if z1_var_ != None:
                 z1.append(i[z1_var_])
 
             print(np.round(len(z)/len(opt_var),decimals=2),end="\r")
         print(np.round(len(z)/len(opt_var),decimals=2))
 
-        ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-        ransac.fit(np.array(xa).reshape(-1, 1), np.array(ya).reshape(-1, 1))
-        y_ransac = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-        m, b = np. polyfit(x, y_ransac, 1)
-
+        HRCC = self.optimization(xa,ya,z_only_best)
         if plot_type == 'graphics':
-            self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z,line_labels=line_labels)
-
-            self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_fit.pdf',cbar_loc=cbar_orien,z_var=z_best)
-            # self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = [m,b],line_labels=line_labels)
-
-            # self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_fit.pdf',cbar_loc=cbar_orien,z_var=z_best,z_max_fit = [m,b])
-
+            # self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z,line_labels=line_labels)
+            self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_'+'delta_m'+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],line_labels=line_labels)
             if gaussian ==1:
-                wf = workFlow()
-                # Method 1(Its not ESM, although fits well for gaussian world)
-                [x_11,x_12] = wf.ESM_onebyn_method1(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,wf.gaussian,wf.ICPDF)
+                prd = Prediction()
+                # Mean of ESM and ES2M
+                [x_11,x_12] = prd.mean_ESM_ES2M(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF)
                 
                 ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x_11).reshape(-1, 1))
                 y_ransac_11 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_11, b_11 = np. polyfit(x, y_ransac_11, 1)
-                d_1 = abs(b_11-b)/ np.sqrt(m**2 +1)
+                d_1 = abs(b_11-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
                 ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x_12).reshape(-1, 1))
                 y_ransac_12 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_12, b_12 = np. polyfit(x, y_ransac_12, 1)
                 
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_method1ESM'+'delta_m'+str(abs(m_11-m))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = [m,b],options_line=[[m_11,b_11],[m_12,b_12]],line_labels=line_labels)
+                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M'+'delta_m'+str(abs(m_11-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[[m_11,b_11],[m_12,b_12]],line_labels=line_labels)
 
                 # self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_fit.pdf',cbar_loc=cbar_orien,z_var=z_best,z_max_fit = [m,b])
 
-                # Method 2(How is it ESM?)
+                # ESM non integral
 
-                [x_21,x_22] = wf.ESM_oneby2n_method2(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,wf.gaussian,wf.ICPDF)
+                [x_21,x_22] = prd.ESM_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF)
                 ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x_21).reshape(-1, 1))
                 y_ransac_21 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_21, b_21 = np. polyfit(x, y_ransac_21, 1)
-                d_1 = abs(b_21-b)/ np.sqrt(m**2 +1)
+                d_1 = abs(b_21-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x_22).reshape(-1, 1))
                 y_ransac_22 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_22, b_22 = np. polyfit(x, y_ransac_22, 1)
                 
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_method2ESM'+'delta_m'+str(abs(m_21-m))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = [m,b],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
+                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM'+'delta_m'+str(abs(m_21-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
 
-                # Method 3(ESM)
+                # ES2M non integral
 
-                expected_highest_quality = wf.ESM_integral_method3(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,wf.gaussian,wf.ICPDF)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(expected_highest_quality).reshape(-1, 1))
-                y_ransac_3 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_3, b_3 = np. polyfit(x, y_ransac_3, 1)
-
-                d_3 = abs(b_3-b)/ np.sqrt(m**2 +1)
-
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_method3ESM'+'delta_m'+str(abs(m_3-m))+'d'+str(d_3)+'.pdf',cbar_loc=cbar_orien,z_var=z,options_line=[[m_3,b_3]],line_labels=[line_labels[0]],z_max_fit = [m,b])
-
-                # ES2M(How?) method 1   (1-3/2n)
-
-                [x2_1,x2_2] = wf.ES2M_method1(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,wf.gaussian,wf.ICPDF)
+                [x2_1,x2_2] = prd.ES2M_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF)
                 ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x2_1).reshape(-1, 1))
                 y_ransac_21 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_21, b_21 = np. polyfit(x, y_ransac_21, 1)
-                d_1 = abs(b_21-b)/ np.sqrt(m**2 +1)
+                d_1 = abs(b_21-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x2_2).reshape(-1, 1))
                 y_ransac_22 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_22, b_22 = np. polyfit(x, y_ransac_22, 1)
                 
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_method1ES2M'+'delta_m'+str(abs(m_21-m))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = [m,b],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
-
-                # mean of ESM(method2) and ES2M(method1)(works even better with mean of area than this)
-                mean_ESM_ES2M = []
-                for i in range(len(x2_1)):
-                    mean_ESM_ES2M.append((x2_1[i] + x_21[i])/2)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(mean_ESM_ES2M).reshape(-1, 1))
-                y_ransac2_1 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m2_1, b2_1 = np. polyfit(x, y_ransac2_1, 1)
-                d2_1 = abs(b2_1-b)/ np.sqrt(m**2 +1)
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2Mnonintegral'+'delta_m'+str(abs(m2_1-m))+'d'+str(d2_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,options_line=[[m2_1,b2_1]],line_labels=[line_labels[0]],z_max_fit = [m,b])
-
-                # Method 2(ES2M)
-
-                ES2M = wf.ES2M_method2(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,wf.gaussian,wf.ICPDF)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(ES2M).reshape(-1, 1))
-                y_ransac_3 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_3, b_3 = np. polyfit(x, y_ransac_3, 1)
-
-                d_3 = abs(b_3-b)/ np.sqrt(m**2 +1)
-
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2Mmethod2'+'delta_m'+str(abs(m_3-m))+'d'+str(d_3)+'.pdf',cbar_loc=cbar_orien,z_var=z,options_line=[[m_3,b_3]],line_labels=[line_labels[0]],z_max_fit = [m,b])
-
-                # mean of ESM(method3) and ES2M(method2)
-                mean_ESM_ES2M = []
-                for i in range(len(x2_1)):
-                    mean_ESM_ES2M.append((ES2M[i] + expected_highest_quality[i])/2)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(mean_ESM_ES2M).reshape(-1, 1))
-                y_ransac2_1 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m2_1, b2_1 = np. polyfit(x, y_ransac2_1, 1)
-                d2_1 = abs(b2_1-b)/ np.sqrt(m**2 +1)
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2Mintegral'+'delta_m'+str(abs(m2_1-m))+'d'+str(d2_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,options_line=[[m2_1,b2_1]],line_labels=[line_labels[0]],z_max_fit = [m,b])
+                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M'+'delta_m'+str(abs(m_21-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
 
             if uniform ==1:
-                wf = workFlow()
+                prd = Prediction()
 
-                # Method 1
-                [x_1,x_2] = wf.ESM_onebyn_method1(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,wf.uniform,wf.ICPDF)
+                # mean ESM and ES2M
+                [x_1,x_2] = prd.mean_ESM_ES2M(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF)
 
                 ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x_1).reshape(-1, 1))
                 y_ransac_11 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_11, b_11 = np. polyfit(x, y_ransac_11, 1)
-                d_1 = abs(b_11-b)/ np.sqrt(m**2 +1)
+                d_1 = abs(b_11-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x_2).reshape(-1, 1))
                 y_ransac_12 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_12, b_12 = np. polyfit(x, y_ransac_12, 1)
                 
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_method1ESM'+'delta_m'+str(abs(m_11-m))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = [m,b],options_line=[[m_11,b_11],[m_12,b_12]],line_labels=line_labels)
+                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M'+'delta_m'+str(abs(m_11-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],options_line=[[m_11,b_11],[m_12,b_12]],line_labels=line_labels)
 
                 # self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z_best,z_max_fit = [m,b],options_line=[[m_11,b_11],[m_12,b_12]],line_labels=line_labels)
 
-                # Method 2
+                # ESM non integral
 
-                [x_21,x_22] = wf.ESM_oneby2n_method2(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,wf.uniform,wf.ICPDF)
+                [x_21,x_22] = prd.ESM_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF)
                 ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x_21).reshape(-1, 1))
                 y_ransac_21 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_21, b_21 = np. polyfit(x, y_ransac_21, 1)
-                d_1 = abs(b_21-b)/ np.sqrt(m**2 +1)
+                d_1 = abs(b_21-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x_22).reshape(-1, 1))
                 y_ransac_22 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_22, b_22 = np. polyfit(x, y_ransac_22, 1)
                 
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_method2ESM'+'delta_m'+str(abs(m_21-m))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = [m,b],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
+                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM'+'delta_m'+str(abs(m_21-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
 
-                # Method 3
+                # ES2M non integral
 
-                expected_highest_quality = wf.ESM_integral_method3(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,wf.uniform,wf.ICPDF)
-                
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(expected_highest_quality).reshape(-1, 1))
-                y_ransac_3 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_3, b_3 = np. polyfit(x, y_ransac_3, 1)
-
-                d_3 = abs(b_3-b)/ np.sqrt(m**2 +1)
-
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_method3ESM'+'delta_m'+str(abs(m_3-m))+'d'+str(d_3)+'.pdf',cbar_loc=cbar_orien,z_var=z,options_line=[[m_3,b_3]],line_labels=[line_labels[0]],z_max_fit = [m,b])
-
-                # ES2M(How?) method 1   (1-3/2n)
-
-                [x2_1,x2_2] = wf.ES2M_method1(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,wf.uniform,wf.ICPDF)
+                [x2_1,x2_2] = prd.ES2M_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF)
                 ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x2_1).reshape(-1, 1))
                 y_ransac_21 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_21, b_21 = np. polyfit(x, y_ransac_21, 1)
-                d_1 = abs(b_21-b)/ np.sqrt(m**2 +1)
+                d_1 = abs(b_21-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
                 ransac.fit(np.array(x).reshape(-1, 1), np.array(x2_2).reshape(-1, 1))
                 y_ransac_22 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
                 m_22, b_22 = np. polyfit(x, y_ransac_22, 1)
                 
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_method1ES2M'+'delta_m'+str(abs(m_21-m))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = [m,b],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
-
-                # mean of ESM(method2) and ES2M(method1)(works even better with mean of area than this)
-                mean_ESM_ES2M = []
-                for i in range(len(x2_1)):
-                    mean_ESM_ES2M.append((x2_1[i] + x_21[i])/2)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(mean_ESM_ES2M).reshape(-1, 1))
-                y_ransac2_1 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m2_1, b2_1 = np. polyfit(x, y_ransac2_1, 1)
-                d2_1 = abs(b2_1-b)/ np.sqrt(m**2 +1)
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2Mnonintegral'+'delta_m'+str(abs(m2_1-m))+'d'+str(d2_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,options_line=[[m2_1,b2_1]],line_labels=[line_labels[0]],z_max_fit = [m,b])
-
-                # Method 2(ES2M)
-
-                ES2M = wf.ES2M_method2(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,wf.uniform,wf.ICPDF)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(ES2M).reshape(-1, 1))
-                y_ransac_3 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_3, b_3 = np. polyfit(x, y_ransac_3, 1)
-
-                d_3 = abs(b_3-b)/ np.sqrt(m**2 +1)
-
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2Mmethod2'+'delta_m'+str(abs(m_3-m))+'d'+str(d_3)+'.pdf',cbar_loc=cbar_orien,z_var=z,options_line=[[m_3,b_3]],line_labels=[line_labels[0]],z_max_fit = [m,b])
-
-                # mean of ESM(method3) and ES2M(method2)
-                mean_ESM_ES2M = []
-                for i in range(len(x2_1)):
-                    mean_ESM_ES2M.append((ES2M[i] + expected_highest_quality[i])/2)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(mean_ESM_ES2M).reshape(-1, 1))
-                y_ransac2_1 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m2_1, b2_1 = np. polyfit(x, y_ransac2_1, 1)
-                d2_1 = abs(b2_1-b)/ np.sqrt(m**2 +1)
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2Mintegral'+'delta_m'+str(abs(m2_1-m))+'d'+str(d2_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,options_line=[[m2_1,b2_1]],line_labels=[line_labels[0]],z_max_fit = [m,b])
+                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M'+'delta_m'+str(abs(m_21-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
 
         elif plot_type == 'line':
             z = z + z1
@@ -613,8 +573,6 @@ class Visualization:
 
         elif plot_type == 'bar':
             self.barPlot(quorum,opt_v[str(sig_m[i])],save_name[i],"maj")
-
-        
 
     def linePlot(self,x,y,z,x_name,y_name,z_name,title,save_name):
         c = ["blue","green","red","purple","brown","yellow","black","orange","pink"]
@@ -631,21 +589,18 @@ class Visualization:
         plt.savefig(save_name,format = "pdf")
         plt.show()
 
-    # def graphicPlot(self,a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,options_line,line_labels,z_var = None):
-    #     plt.legend()
-
-    def graphicPlot(self,a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,z_var,z_max_fit=None,options_line=None,line_labels=None):
+    def graphicPlot(self,a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,z_var,z_max_fit=None,z_max_fit_lab = None,options_line=None,line_labels=None):
         fig, ax = plt.subplots()
         z = np.array(z_var).reshape(len(a),len(b))
         cs = ax.pcolormesh(b,a,z)
         colors = ["black","brown"]
-        if options_line != None:
+        if isinstance(options_line, type(None)) == False:
             for j in range(len(options_line)):
                 ESM = [options_line[j][0]*bb+options_line[j][1] for bb in b]
                 plt.plot(b,ESM,color = colors[j],linestyle='-',label = str(line_labels[j]))
-        if z_max_fit != None:
+        if isinstance(z_max_fit, type(None)) == False:
             z_best_fit = [z_max_fit[0]*bb+z_max_fit[1] for bb in b]
-            plt.plot(b,z_best_fit,color = 'white',label = "Least Square fit HRCC ")
+            plt.plot(b,z_best_fit,color = 'darkgreen',label = z_max_fit_lab,linewidth=0.5)
         cbar = fig.colorbar(cs,orientation=cbar_loc)
         cbar.set_label(z_name,fontsize=14)
         cbar.set_ticks(np.arange(min(z_var),max(z_var),(max(z_var)-min(z_var))/10))
@@ -683,6 +638,8 @@ class Visualization:
             plt.savefig(save_name,format = "pdf")
         # plt.savefig(save_name,format = "pdf")
         point = fig.canvas.mpl_connect('button_press_event', onclick)
+
+        pushbullet_message('Python Code','Pick the point! ')
         plt.show()
         
     def barPlot(self,quor,opt_v,save_name,correct):
@@ -696,41 +653,118 @@ class Visualization:
         plt.savefig(save_name,format = "pdf")
         # plt.show()
 
-class Qranking:
-    def __init__(self,number_of_options):
-        self.n = number_of_options
-        self.ref_rank = np.zeros((self.n,self.n))
-        self.exp_rank = np.zeros((self.n,self.n))
-        self.exp_rank_w_n = np.zeros((self.n,self.n))
 
-    def ref_ranking(self,oq,y_ratios,no_votes):
-        for i in range(len(oq)):
-            for j in range(i+1,self.n):
-                if oq[i]>oq[j]:
-                    self.ref_rank[i,j] = 1
-                if y_ratios[i]>y_ratios[j] and no_votes[i]<no_votes[j]:
-                    self.exp_rank[i,j] = 1
-                elif y_ratios[i]<y_ratios[j] and no_votes[i]>no_votes[j]:
-                    self.exp_rank[i,j] = 0
-                elif y_ratios[i]<y_ratios[j] and no_votes[i]<no_votes[j]:
-                    self.exp_rank[i,j] = 0.5
-                elif y_ratios[i]>y_ratios[j] and no_votes[i]>no_votes[j]:
-                    self.exp_rank[i,j] = 0.5
+####################### Do not remove   #################
+prd = Prediction()
+fig = plt.figure()
 
-    def ref_ranking_w_n(self,oq,y_ratios,no_votes):
-        for i in range(len(oq)):
-            for j in range(i+1,self.n):
-                if y_ratios[i]>y_ratios[j]:
-                    self.exp_rank_w_n[i,j] = 1
-                elif y_ratios[i]<y_ratios[j]:
-                    self.exp_rank_w_n[i,j] = 0
-                else:
-                    self.exp_rank_w_n[i,j] = 0.5
+crosscheck = 0
+if crosscheck == 1:
+    ax = fig.add_subplot(121)
+    step = 0.0001
+    mu = [5,8]
+    sigma = [1,1]
+    start = np.sum(mu)/len(mu) - np.sum(sigma)-5
+    stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
+    x = np.arange(start,stop,step)
+    pdfg = [prd.gaussian(i,mu,sigma) for i in x]
+    area = np.sum(pdfg)*step
+    pdfg = pdfg/area
+    print(np.sum(pdfg)*step)
+    plt.plot(x,pdfg)
+    pdfu = [prd.uniform(i,mu,sigma) for i in x]
+    area = np.sum(pdfu)*step
+    pdfu = pdfu/area
+    print(np.sum(pdfu)*step)
+    plt.plot(x,pdfu)
+    x_ = prd.ICPDF(0.8,mu,stop,step,x,pdfg)
+    print(x_)
+    print(prd.gaussian(x_,mu,sigma))
+    ax.fill_between(x[:np.argmin(np.abs(x-x_))],0,pdfg[:np.argmin(np.abs(x-x_))],facecolor='blue')
 
-    def incorrectness_cost(self,exp_rank):
-        measure_of_incorrectness = 0
-        for i in range(self.n):
-            for j in range(i+1,self.n):
-                measure_of_incorrectness += abs(exp_rank[i,j]-self.ref_rank[i,j])
-        measure_of_incorrectness = 2*measure_of_incorrectness/(self.n*(self.n - 1))
-        return measure_of_incorrectness           #   Higher measure of incorrectness more bad is the ranking by units votes
+    x_ = prd.ICPDF(0.8,mu,stop,step,x,pdfu)
+    print(x_)
+    print(prd.uniform(x_,mu,sigma)/area)
+    ax.fill_between(x[:np.argmin(np.abs(x-x_))],0,pdfu[:np.argmin(np.abs(x-x_))],facecolor='orange')
+    plt.show()
+
+check_qualityrange = 0
+if check_qualityrange == 1:
+    ax = fig.add_subplot(131)
+    step = 0.0001
+    mu = [5,9]
+    sigma = [1,1]
+    start = np.sum(mu)/len(mu) - np.sum(sigma)-max(sigma)*45
+    stop = np.sum(mu)/len(mu) + np.sum(sigma)+max(sigma)*45
+    x = np.arange(start,stop,step)
+    pdfg = [prd.gaussian(i,mu,sigma) for i in x]
+    area = np.sum(pdfg)*step
+    pdfg = pdfg/area
+    print(np.sum(pdfg)*step)
+    plt.plot(x,pdfg)
+
+    ax1 = fig.add_subplot(132)
+    number_of_options = [10]
+    for nop in number_of_options:
+        mu_x=[5,9]
+        sigma_x=[1,1]
+        start = np.sum(mu_x)/len(mu_x) - np.sum(sigma_x)-max(sigma_x)*45
+        stop = np.sum(mu_x)/len(mu_x) + np.sum(sigma_x)+max(sigma_x)*45
+        dis_x = np.round(np.arange(start,stop,step),decimals=4)
+        pdf =  [prd.gaussian(i,mu_x,sigma_x) for i in dis_x]
+        pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
+        slices = []
+        mid_slices=[]
+        for i in range(nop-1,0,-1):
+            ESM = prd.ICPDF(1.0-(i/nop),mu_x,stop,step,dis_x,pdf)
+            slices.append(np.round(ESM,decimals=3))
+
+        for i in range(2*nop-2,0,-1):
+            if i%2!=0:
+                mid_slices.append(np.round(prd.ICPDF(1.0-(i/(2*nop)),mu_x,stop,step,dis_x,pdf),decimals=3))
+
+        number_of_colors = nop+2
+
+        color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
+             for i in range(number_of_colors)]
+        for i in range(len(slices)+1):
+            if i!=0 and i!=len(slices):
+                ax.fill_between(x[np.argmin(np.abs(x-slices[i-1])):np.argmin(np.abs(x-slices[i]))],0,pdfg[np.argmin(np.abs(x-slices[i-1])):np.argmin(np.abs(x-slices[i]))],facecolor=color[i])
+            elif i==0:
+                ax.fill_between(x[np.argmin(np.abs(x-start)):np.argmin(np.abs(x-slices[i]))],0,pdfg[np.argmin(np.abs(x-start)):np.argmin(np.abs(x-slices[i]))],facecolor=color[i])
+            elif i==len(slices):
+                ax.fill_between(x[np.argmin(np.abs(x-slices[i-1])):np.argmin(np.abs(x-stop))],0,pdfg[np.argmin(np.abs(x-slices[i-1])):np.argmin(np.abs(x-stop))],facecolor=color[i])
+        bests = []
+        for i in range(100):
+            ref_qual,options_quality = rng.quality(distribution=rng.dx_n,mu_x=mu_x,sigma_x=sigma_x,number_of_options=nop)
+            best = max(options_quality)
+            bests.append(best)
+        slices.append(stop)
+        slices.append(stop+1)
+
+        hist, bin_edges = np.histogram(bests,slices) # make the histogram
+        # # Plot the histogram heights against integers on the x axis
+        ax1.bar(range(1,len(hist)+1,1),hist,width=1) 
+
+        # # Set the ticks to the middle of the bars
+        ax1.set_xticks([0.5+i for i,j in enumerate(hist)])
+
+        # # Set the xticklabels to a string that tells us what the bin edges were
+        ax1.set_xticklabels(['{}'.format(np.round(slices[i],decimals=2)) for i,j in enumerate(hist)])
+
+        ESM = prd.ICPDF(1.0-(1/(2*nop)),mu_x,stop,step,dis_x,pdf)
+
+        ESMi = 0
+        areas = np.round(np.arange(0,1,step),decimals=4)
+        for area in areas:
+            inverse_P =  prd.ICPDF(area**(1/nop),mu_x,stop,step,dis_x,pdf)
+            ESMi += inverse_P*step
+
+        print(ESM)
+        print(ESMi)
+        ax2 = fig.add_subplot(133)
+        plt.axvline(ESM,0,500,color='orange',label = 'Non-integral')
+        plt.axvline(ESMi,0,500,color='red',label = 'Integral')
+        plt.legend()
+    plt.show()
+#########################################################
