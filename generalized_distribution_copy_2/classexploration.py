@@ -309,85 +309,12 @@ class Prediction:
         return x_
 
     @staticmethod
-    def mean_ESM_ES2M(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
-        x_1 = []
-        x_2 = []
-        step = 0.0001
-        for i in x:
-            if x_var_ == '$\mu_{x_1}$':
-                mu = [i,i+delta_mu]
-            else:
-                mu = [i-delta_mu,i]
-            sigma = [sigma_x_1,sigma_x_2]
-            start = np.sum(mu)/len(mu) - np.sum(sigma)-5
-            stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
-            dis_x = np.arange(start,stop,step)
-            pdf =  [distribution_fn(i,mu,sigma) for i in dis_x]
-            pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
-            
-            _1 = ICPDF_fn(1.0-(1.0/(line_labels[0])),mu,stop,step,dis_x,pdf)
-            _2 = ICPDF_fn(1.0-(1.0/(line_labels[1])),mu,stop,step,dis_x,pdf)
-            x_1.append(_1)
-            x_2.append(_2)
-            print(np.round(len(x_1)/len(x),decimals=2),end="\r")
-        return [x_1,x_2]
-
-    @staticmethod
-    def ESM_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
-        x_1 = []
-        x_2 = []
-        step = 0.0001
-        for i in x:
-            if x_var_ == '$\mu_{x_1}$':
-                mu = [i,i+delta_mu]
-            else:
-                mu = [i-delta_mu,i]
-            sigma = [sigma_x_1,sigma_x_2]
-            start = np.sum(mu)/len(mu) - np.sum(sigma)-5
-            stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
-            dis_x = np.arange(start,stop,step)
-            pdf =  [distribution_fn(i,mu,sigma) for i in dis_x]
-            pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
-            
-            _1 = ICPDF_fn(1.0-(1.0/(2*line_labels[0])),mu,stop,step,dis_x,pdf)
-            _2 = ICPDF_fn(1.0-(1.0/(2*line_labels[1])),mu,stop,step,dis_x,pdf)
-            x_1.append(_1)
-            x_2.append(_2)
-            print(np.round(len(x_1)/len(x),decimals=2),end="\r")
-        return [x_1,x_2]
-
-    @staticmethod
-    def ES2M_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn):
-        x_1 = []
-        x_2 = []
-        step = 0.0001
-        for i in x:
-            if x_var_ == '$\mu_{x_1}$':
-                mu = [i,i+delta_mu]
-            else:
-                mu = [i-delta_mu,i]
-            sigma = [sigma_x_1,sigma_x_2]
-            start = np.sum(mu)/len(mu) - np.sum(sigma)-5
-            stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
-            
-            dis_x = np.arange(start,stop,step)
-            pdf =  [distribution_fn(i,mu,sigma) for i in dis_x]
-            pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
-            
-            _1 = ICPDF_fn(1.0-(3.0/(2*line_labels[0])),mu,stop,step,dis_x,pdf)
-            _2 = ICPDF_fn(1.0-(3.0/(2*line_labels[1])),mu,stop,step,dis_x,pdf)
-            x_1.append(_1)
-            x_2.append(_2)
-            print(np.round(len(x_1)/len(x),decimals=2),end="\r")
-        return [x_1,x_2]
-
-
-class Visualization:
-    def optimization(self,x,y,z,max_iter=10000,d = 0.2):
+    def optimization(x,y,z,max_iter=10000,d = 0.2):
         min_z = min(z)
         iterations = 0
         goodness_of_fit = -np.Inf
-        
+        iter = []
+        fit_cost = []
         while iterations<1000:
             selected = np.random.randint(0,len(x),int(2*len(x)/3))
             maybeInliers_x = []
@@ -420,9 +347,46 @@ class Visualization:
                 goodness_of_fit = thisgoodness
 
             iterations += 1
-        print([bestFit,goodness_of_fit])
-        return [bestFit,np.round(goodness_of_fit,decimals=3)]
+            iter.append(iterations)
+            fit_cost.append(goodness_of_fit)
+        
+        return [bestFit,np.round(goodness_of_fit,decimals=3),iter,fit_cost]
 
+    @staticmethod
+    def z_extractor(x,y,x_line,z):
+        z = np.array(z).reshape(len(y),len(x))
+        z_extracted = []
+        for i in range(len(x)):
+            z_loc = np.argmin(np.abs(np.array(y)-x_line[i]))
+            z_extracted.append(z[z_loc,i])
+        return z_extracted
+
+    @staticmethod
+    def Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn,hrcc_area,extractor,optimizer):
+        x_1 = []
+        step = 0.0001
+        for i in x:
+            if x_var_ == '$\mu_{x_1}$':
+                mu = [i,i+delta_mu]
+            else:
+                mu = [i-delta_mu,i]
+            sigma = [sigma_x_1,sigma_x_2]
+            start = np.sum(mu)/len(mu) - np.sum(sigma)-5
+            stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
+            dis_x = np.arange(start,stop,step)
+            pdf =  [distribution_fn(i,mu,sigma) for i in dis_x]
+            pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
+            
+            _1 = ICPDF_fn(hrcc_area,mu,stop,step,dis_x,pdf)
+            x_1.append(_1)
+            print(np.round(len(x_1)/len(x),decimals=2),end="\r")
+
+        z_extracted = extractor(x,y,x_1,z)
+        hrcc = optimizer(x,x_1,z_extracted)
+        return hrcc
+
+
+class Visualization:
     def data_visualize(self,file_name,save_plot,x_var_,y_var_,z_var_,plot_type,gaussian=1,uniform=0,cbar_orien=None,line_labels=None,sigma_x_1=None,\
         data =None,num_of_opts=None,delta_mu=None,sigma_x_2 = None,z1_var_=None):
         # gives data as array
@@ -468,104 +432,39 @@ class Visualization:
 
             print(np.round(len(z)/len(opt_var),decimals=2),end="\r")
         print(np.round(len(z)/len(opt_var),decimals=2))
-
-        HRCC = self.optimization(xa,ya,z_only_best)
+        prd = Prediction()
+        HRCC = prd.optimization(xa,ya,z_only_best)
+        self.linePlot(HRCC[2],HRCC[3],x_name='Number_of_iterations',y_name='HRCC',z_name=[str(HRCC[1])],title='Best_fit_for_HRCC',save_name=path+'HRCC.pdf')
         if plot_type == 'graphics':
-            # self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z,line_labels=line_labels)
-            self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_'+'delta_m'+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],line_labels=line_labels)
+            self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_'+'delta_m'+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],line_labels=line_labels)
             if gaussian ==1:
-                prd = Prediction()
+                
                 # Mean of ESM and ES2M
-                [x_11,x_12] = prd.mean_ESM_ES2M(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF)
-                
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x_11).reshape(-1, 1))
-                y_ransac_11 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_11, b_11 = np. polyfit(x, y_ransac_11, 1)
-                d_1 = abs(b_11-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x_12).reshape(-1, 1))
-                y_ransac_12 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_12, b_12 = np. polyfit(x, y_ransac_12, 1)
-                
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M'+'delta_m'+str(abs(m_11-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[[m_11,b_11],[m_12,b_12]],line_labels=line_labels)
-
-                # self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_fit.pdf',cbar_loc=cbar_orien,z_var=z_best,z_max_fit = [m,b])
-
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(line_labels[0])),prd.z_extractor,prd.optimization)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
                 # ESM non integral
 
-                [x_21,x_22] = prd.ESM_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x_21).reshape(-1, 1))
-                y_ransac_21 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_21, b_21 = np. polyfit(x, y_ransac_21, 1)
-                d_1 = abs(b_21-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x_22).reshape(-1, 1))
-                y_ransac_22 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_22, b_22 = np. polyfit(x, y_ransac_22, 1)
-                
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM'+'delta_m'+str(abs(m_21-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(2*line_labels[0])),prd.z_extractor,prd.optimization)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
 
                 # ES2M non integral
 
-                [x2_1,x2_2] = prd.ES2M_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x2_1).reshape(-1, 1))
-                y_ransac_21 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_21, b_21 = np. polyfit(x, y_ransac_21, 1)
-                d_1 = abs(b_21-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x2_2).reshape(-1, 1))
-                y_ransac_22 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_22, b_22 = np. polyfit(x, y_ransac_22, 1)
-                
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M'+'delta_m'+str(abs(m_21-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(3.0/(2*line_labels[0])),prd.z_extractor,prd.optimization)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
 
             if uniform ==1:
-                prd = Prediction()
-
-                # mean ESM and ES2M
-                [x_1,x_2] = prd.mean_ESM_ES2M(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF)
-
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x_1).reshape(-1, 1))
-                y_ransac_11 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_11, b_11 = np. polyfit(x, y_ransac_11, 1)
-                d_1 = abs(b_11-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x_2).reshape(-1, 1))
-                y_ransac_12 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_12, b_12 = np. polyfit(x, y_ransac_12, 1)
                 
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M'+'delta_m'+str(abs(m_11-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],options_line=[[m_11,b_11],[m_12,b_12]],line_labels=line_labels)
-
-                # self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z_best,z_max_fit = [m,b],options_line=[[m_11,b_11],[m_12,b_12]],line_labels=line_labels)
+                # mean ESM and ES2M
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(1.0/(line_labels[0])),prd.z_extractor,prd.optimization)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
 
                 # ESM non integral
-
-                [x_21,x_22] = prd.ESM_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x_21).reshape(-1, 1))
-                y_ransac_21 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_21, b_21 = np. polyfit(x, y_ransac_21, 1)
-                d_1 = abs(b_21-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x_22).reshape(-1, 1))
-                y_ransac_22 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_22, b_22 = np. polyfit(x, y_ransac_22, 1)
-                
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM'+'delta_m'+str(abs(m_21-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(1.0/(2*line_labels[0])),prd.z_extractor,prd.optimization)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
 
                 # ES2M non integral
-
-                [x2_1,x2_2] = prd.ES2M_non_integral(delta_mu,x_var_,x,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF)
-                ransac = linear_model.RANSACRegressor(max_trials=1000,min_samples=100)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x2_1).reshape(-1, 1))
-                y_ransac_21 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_21, b_21 = np. polyfit(x, y_ransac_21, 1)
-                d_1 = abs(b_21-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1)
-                ransac.fit(np.array(x).reshape(-1, 1), np.array(x2_2).reshape(-1, 1))
-                y_ransac_22 = ransac.predict(np.array(x).reshape(-1, 1)).reshape(-1)
-                m_22, b_22 = np. polyfit(x, y_ransac_22, 1)
-                
-                self.graphicPlot(a= y,b=x,array= opt_var,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M'+'delta_m'+str(abs(m_21-HRCC[0][0]))+'d'+str(d_1)+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],options_line=[[m_21,b_21],[m_22,b_22]],line_labels=line_labels)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(3.0/(2*line_labels[0])),prd.z_extractor,prd.optimization)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
 
         elif plot_type == 'line':
             z = z + z1
@@ -574,7 +473,7 @@ class Visualization:
         elif plot_type == 'bar':
             self.barPlot(quorum,opt_v[str(sig_m[i])],save_name[i],"maj")
 
-    def linePlot(self,x,y,z,x_name,y_name,z_name,title,save_name):
+    def linePlot(self,x,y,x_name,y_name,z_name,title,save_name):
         c = ["blue","green","red","purple","brown","yellow","black","orange","pink"]
         line_style = ["-","--",":","-."]
         fig = plt.figure(figsize=(15, 8), dpi= 90, facecolor='w', edgecolor='k')
@@ -582,14 +481,14 @@ class Visualization:
         for i in range(len(z_name)):
             plt.plot(x,[y[s] for s in range(i*len(x),(i+1)*len(x),1)],c = c[i],linewidth = 1,linestyle=line_style[i%len(line_style)])
 
-        plt.ylim(top = 1,bottom = -0.1)
+        plt.ylim(top = max(y)+(max(y)-min(y))/10,bottom = min(y)-(max(y)-min(y))/10)
         plt.xlabel(x_name)
         plt.ylabel(y_name)
         plt.legend(z_name,markerscale = 3, title = title)
         plt.savefig(save_name,format = "pdf")
         plt.show()
 
-    def graphicPlot(self,a,b,array,x_name,y_name,z_name,title,save_name,cbar_loc,z_var,z_max_fit=None,z_max_fit_lab = None,options_line=None,line_labels=None):
+    def graphicPlot(self,a,b,x_name,y_name,z_name,title,save_name,cbar_loc,z_var,z_max_fit=None,z_max_fit_lab = None,options_line=None,line_labels=None):
         fig, ax = plt.subplots()
         z = np.array(z_var).reshape(len(a),len(b))
         cs = ax.pcolormesh(b,a,z)
@@ -597,14 +496,13 @@ class Visualization:
         if isinstance(options_line, type(None)) == False:
             for j in range(len(options_line)):
                 ESM = [options_line[j][0]*bb+options_line[j][1] for bb in b]
-                plt.plot(b,ESM,color = colors[j],linestyle='-',label = str(line_labels[j]))
+                plt.plot(b,ESM,color = colors[j],linestyle='-',label = str(line_labels[j]),linewidth=0.8)
         if isinstance(z_max_fit, type(None)) == False:
             z_best_fit = [z_max_fit[0]*bb+z_max_fit[1] for bb in b]
-            plt.plot(b,z_best_fit,color = 'darkgreen',label = z_max_fit_lab,linewidth=0.5)
+            plt.plot(b,z_best_fit,color = 'darkgreen',label = z_max_fit_lab,linewidth=0.8)
         cbar = fig.colorbar(cs,orientation=cbar_loc)
         cbar.set_label(z_name,fontsize=14)
         cbar.set_ticks(np.arange(min(z_var),max(z_var),(max(z_var)-min(z_var))/10))
-        # cbar. set_ticks(np.arange(0,1,0.01))
         cbar.set_clim(0,1)
         ax.set_aspect('equal', 'box')
         # ax.xaxis.set_ticks(np.arange(min(b),max(b),int(max(b)-min(b))/10))
@@ -636,7 +534,7 @@ class Visualization:
                         points[-1][p].remove()
                 del points[-1]
             plt.savefig(save_name,format = "pdf")
-        # plt.savefig(save_name,format = "pdf")
+
         point = fig.canvas.mpl_connect('button_press_event', onclick)
 
         pushbullet_message('Python Code','Pick the point! ')
