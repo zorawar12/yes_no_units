@@ -433,38 +433,53 @@ class Visualization:
             print(np.round(len(z)/len(opt_var),decimals=2),end="\r")
         print(np.round(len(z)/len(opt_var),decimals=2))
         prd = Prediction()
-        HRCC = prd.optimization(xa,ya,z_only_best)
-        self.linePlot(HRCC[2],HRCC[3],x_name='Number_of_iterations',y_name='HRCC',z_name=[str(HRCC[1])],title='Best_fit_for_HRCC',save_name=path+'HRCC.pdf')
+        if 'mu' in x_var_:
+            HRCC = prd.optimization(xa,ya,z_only_best)
+        else:
+            HRCC=[None,None,None]
+        
         if plot_type == 'graphics':
-            self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_'+'delta_m'+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],line_labels=line_labels)
+            self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],line_labels=line_labels)
             if gaussian ==1:
-                
+                self.linePlot(HRCC[2],HRCC[3],x_name='Number of iterations',y_name='Average HRCC',z_name=[str(HRCC[1])],title='Maximizing HRCC for best fit',save_name=path+save_plot+'HRCC.pdf')
                 # Mean of ESM and ES2M
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(line_labels[0])),prd.z_extractor,prd.optimization)
-                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(line_labels)),prd.z_extractor,prd.optimization)
+                d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
+                delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
                 # ESM non integral
 
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(2*line_labels[0])),prd.z_extractor,prd.optimization)
-                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(2*line_labels)),prd.z_extractor,prd.optimization)
+                d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
+                delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
                 # ES2M non integral
 
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(3.0/(2*line_labels[0])),prd.z_extractor,prd.optimization)
-                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(3.0/(2*line_labels)),prd.z_extractor,prd.optimization)
+                d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
+                delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
             if uniform ==1:
-                
+                self.linePlot(HRCC[2],HRCC[3],x_name='Number of iterations',y_name='Average HRCC',z_name=[str(HRCC[1])],title='Maximizing HRCC for best fit',save_name=path+save_plot+'HRCC.pdf')
                 # mean ESM and ES2M
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(1.0/(line_labels[0])),prd.z_extractor,prd.optimization)
-                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(1.0/(line_labels)),prd.z_extractor,prd.optimization)
+                d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
+                delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
                 # ESM non integral
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(1.0/(2*line_labels[0])),prd.z_extractor,prd.optimization)
-                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(1.0/(2*line_labels)),prd.z_extractor,prd.optimization)
+                d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
+                delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
                 # ES2M non integral
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(3.0/(2*line_labels[0])),prd.z_extractor,prd.optimization)
-                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M'+'delta_m'+str(abs(predicted_hrcc[0][0]-HRCC[0][0]))+'Hrcc'+str(predicted_hrcc[1])+'.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=line_labels)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(3.0/(2*line_labels)),prd.z_extractor,prd.optimization)
+                d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
+                delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
+                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
         elif plot_type == 'line':
             z = z + z1
@@ -488,7 +503,7 @@ class Visualization:
         plt.savefig(save_name,format = "pdf")
         plt.show()
 
-    def graphicPlot(self,a,b,x_name,y_name,z_name,title,save_name,cbar_loc,z_var,z_max_fit=None,z_max_fit_lab = None,options_line=None,line_labels=None):
+    def graphicPlot(self,a,b,x_name,y_name,z_name,title,save_name,cbar_loc,z_var,z_max_fit=None,z_max_fit_lab = None,options_line=None,line_labels=None,d=None,delta_slope=None):
         fig, ax = plt.subplots()
         z = np.array(z_var).reshape(len(a),len(b))
         cs = ax.pcolormesh(b,a,z)
@@ -496,23 +511,21 @@ class Visualization:
         if isinstance(options_line, type(None)) == False:
             for j in range(len(options_line)):
                 ESM = [options_line[j][0]*bb+options_line[j][1] for bb in b]
-                plt.plot(b,ESM,color = colors[j],linestyle='-',label = str(line_labels[j]),linewidth=0.8)
+                plt.plot(b,ESM,color = colors[j],linestyle='-',label = str(line_labels[0]) + ' options, HRCC = '+str(line_labels[1])+', d = '+str(d)+', $\Delta m$ = '+str(delta_slope),linewidth=0.8)
         if isinstance(z_max_fit, type(None)) == False:
             z_best_fit = [z_max_fit[0]*bb+z_max_fit[1] for bb in b]
-            plt.plot(b,z_best_fit,color = 'darkgreen',label = z_max_fit_lab,linewidth=0.8)
+            plt.plot(b,z_best_fit,color = 'darkgreen',label = 'HRCC = '+str(z_max_fit_lab),linewidth=0.8)
         cbar = fig.colorbar(cs,orientation=cbar_loc)
         cbar.set_label(z_name,fontsize=14)
         cbar.set_ticks(np.arange(min(z_var),max(z_var),(max(z_var)-min(z_var))/10))
         cbar.set_clim(0,1)
         ax.set_aspect('equal', 'box')
-        # ax.xaxis.set_ticks(np.arange(min(b),max(b),int(max(b)-min(b))/10))
-        # ax.yaxis.set_ticks(np.arange(min(a),max(a),int(max(a)-min(a))/10))
         plt.xlim(min(b),max(b))
         plt.ylim(min(a),max(a))
         plt.xlabel(x_name,fontsize = 14)
         plt.ylabel(y_name,fontsize = 14)
-        # plt.legend(title = 'ESM for number of options',loc='upper left')
-        plt.legend(loc='upper left')
+        if 'mu' in x_name:
+            plt.legend(title = 'HRCC Prediction and Best fit HRCC',loc='upper left')
         plt.title(title)
         plt.grid(b=True, which='major', color='black', linestyle='-',linewidth = 0.3,alpha=0.1)
         plt.minorticks_on()
@@ -554,10 +567,11 @@ class Visualization:
 
 ####################### Do not remove   #################
 prd = Prediction()
-fig = plt.figure()
+
 
 crosscheck = 0
 if crosscheck == 1:
+    fig = plt.figure()
     ax = fig.add_subplot(121)
     step = 0.0001
     mu = [5,8]
@@ -588,6 +602,7 @@ if crosscheck == 1:
 
 check_qualityrange = 0
 if check_qualityrange == 1:
+    fig = plt.figure()
     ax = fig.add_subplot(131)
     step = 0.0001
     mu = [5,9]

@@ -21,12 +21,13 @@ WRC_normal = 0
 pval_WRC_normal = 0
 pval_WRC_bimodal_x_gaussian_h = 0
 pval_WRC_uniform_x_gaussian_h = 0
-
 bimodal_x_normal_h = 0
+bimodal_x_normal_h_sigma = 1
+
 mu_x_vs_mu_h_vs_RCD = 0
-uniform_x_normal_h = 1
+uniform_x_normal_h = 0
 uniform_x_uniform_h = 0
-bimodal_x_normal_h_sigma = 0
+
 uniform_x_normal_h_sigma = 0
 uniform_x_uniform_h_sigma = 0
 
@@ -299,7 +300,7 @@ if pval_WRC_uniform_x_gaussian_h ==1:
 
 if bimodal_x_normal_h==1:
     continuation = False
-    number_of_opts = [20]
+    number_of_opts = [2,5,10,20]
     mu_m_1=100
     sigma_m_1=0
     mu_m_2=100
@@ -313,10 +314,11 @@ if bimodal_x_normal_h==1:
     delta_mu = 5
     mu_x = [np.round(i*0.1,decimals=1) for i in range(151)]
     mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
+    cnt = 3
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = '6delta_mu_5_mu_h_vs_mu_x1_mu_x2_vs_RCDnop20'#'delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD'+'nop'+str(nop)
-        # save_string = save_data(save_string,continuation)
+        save_string = 'bxnh_delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD_nop'+str(nop) # str(cnt)+
+        save_string = save_data(save_string,continuation)
 
         def mux1muh1(muh,mux):
             mux1 = mux
@@ -335,10 +337,11 @@ if bimodal_x_normal_h==1:
 
         # parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
 
-        vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=[number_of_options,number_of_options+1],z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2,gaussian=1,uniform=0)
+        vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=number_of_options,z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2)
 
         message = str(nop)+' number of options simulation finished'
         pushbullet_message('Python Code','Results out! '+message)
+        cnt += 1
 
 if bimodal_x_normal_h_sigma==1:
     continuation = False
@@ -356,10 +359,10 @@ if bimodal_x_normal_h_sigma==1:
     delta_sigma = 1
     sigma_x = [np.round(i*0.1,decimals=1) for i in range(151)]
     sigma_h = [np.round(i*0.1,decimals=1) for i in range(151)]
-    file_num = 21
+    file_num = 7
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = str(file_num)+'delta_sigma_'+str(delta_sigma)+'_sigma_h_vs_sigma_x1_sigma_x2_vs_RCD'+'nop'+str(nop)
+        save_string = str(file_num)+'bxnh_delta_sigma_'+str(delta_sigma)+'_sigma_h_vs_sigma_x1_sigma_x2_vs_RCD'+'nop'+str(nop) # 'bxnh_delta_sigma_'+str(delta_sigma)+'_sigma_h_vs_sigma_x1_sigma_x2_vs_RCD'+'nop'+str(nop)
         # save_string = save_data(save_string,continuation)
 
         def sigx1sigh1(sigma_h,sigma_x):
@@ -379,7 +382,7 @@ if bimodal_x_normal_h_sigma==1:
 
         # parallel(sigx1sigh1,sigma_h,sigma_x,columns_name=['$\sigma_{h_1}$','$\sigma_{h_2}$','$\sigma_{x_1}$','$\sigma_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(sigma_h))
 
-        vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\sigma_{x_1}$',y_var_='$\sigma_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=[number_of_options,number_of_options+1],z_var_='success_rate',plot_type='graphics',gaussian=0,uniform=0)
+        vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\sigma_{x_1}$',y_var_='$\sigma_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=number_of_options,z_var_='success_rate',plot_type='graphics',gaussian=0,uniform=0)
 
         message = str(nop)+' number of options simulation finished'
         pushbullet_message('Python Code','Results out! '+message)
@@ -425,7 +428,7 @@ if uniform_x_normal_h==1:
 
         # parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
 
-        vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=[number_of_options],z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2,gaussian=0,uniform=1)
+        vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=number_of_options,z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2,gaussian=0,uniform=1)
 
         message = str(nop)+' number of options simulation finished'
         pushbullet_message('Python Code','Results out! '+message)
@@ -561,39 +564,3 @@ if uniform_x_uniform_h_sigma==1:
 
         message = str(nop)+' number of options simulation finished'
         pushbullet_message('Python Code','Results out! '+message)
-
-
-check_gaussian = 0
-if check_gaussian == 1:
-    # [_,p_x,p_fx] = finding_gaussian_base(1.000000000,5,1)
-    # [_,n_x,n_fx] = finding_gaussian_base(0.0000000,5,1)
-    # [_,intermediate_x,intermediate_fx] = finding_gaussian_base(0.1,5,1)
-    # x = [n_x[i] for i in range(len(n_x)-1,-1,-1)]+p_x
-    # fx = [n_fx[i] for i in range(len(n_fx)-1,-1,-1)]+p_fx
-    # f,ax = plt.subplots()
-    # plt.plot(x,fx)
-    # x = np.array(x)[:x.index(intermediate_x[-1])]
-    # fx = np.array(fx)[:fx.index(intermediate_fx[-1])]
-    # ax.fill_between(x,0,fx,facecolor='orange')
-    # plt.show()
-    number_of_options = [2,5,10,20,100]
-    f,ax = plt.subplots(5,5)
-    for nop in number_of_options:
-        for l in range(5):
-            options_quality = quality(number_of_options=nop,x_type=x_type,mu_x_1=5,sigma_x_1=1,mu_x_2=8,sigma_x_2=1)
-            options_quality = options_quality.Dx
-            y = [1 for i in range(len(options_quality))]
-            [_,p1_x,p1_fx] = wf.finding_gaussian_base(1.000000000,5,1)
-            [_,n1_x,n1_fx] = wf.finding_gaussian_base(0.0000000,5,1)
-            [_,p2_x,p2_fx] = wf.finding_gaussian_base(1.000000000,8,1)
-            [_,n2_x,n2_fx] = wf.finding_gaussian_base(0.0000000,8,1)
-            x = [n1_x[i] for i in range(len(n1_x)-1,-1,-1)]+p1_x
-            fx = [n1_fx[i] for i in range(len(n1_fx)-1,-1,-1)]+p1_fx 
-            ax[number_of_options.index(nop),l].plot(x,fx)
-            x = [n2_x[i] for i in range(len(n2_x)-1,-1,-1)]+p2_x
-            fx = [n2_fx[i] for i in range(len(n2_fx)-1,-1,-1)]+p2_fx
-            ax[number_of_options.index(nop),l].plot(x,fx)
-            for i in range(len(y)):
-                ax[number_of_options.index(nop),l].plot([options_quality[i],options_quality[i]],[0,1])
-    plt.show()
-
