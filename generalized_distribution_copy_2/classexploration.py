@@ -258,13 +258,11 @@ class Prediction:
     @staticmethod
     @njit
     def uniform(x,mu,sigma):
-        # Note here that mu contains lower bound and sigma contains upper bound instead of 
-        # mean and standard deviation of the distribution
         f = 0
         for i in range(len(mu)):
             a = (mu[i] - np.sqrt(3)*sigma[i])
             b = (mu[i] + np.sqrt(3)*sigma[i])
-            f += 1/abs(a-b)
+            f += 1/abs(b-a)
         return f
 
     @staticmethod
