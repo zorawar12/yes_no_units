@@ -12,6 +12,7 @@ import os
 import requests
 import json
 import random_number_generator as rng
+from numba.typed import List
 
 path = os.getcwd() + "/results/"
 
@@ -21,12 +22,12 @@ WRC_normal = 0
 pval_WRC_normal = 0
 pval_WRC_bimodal_x_gaussian_h = 0
 pval_WRC_uniform_x_gaussian_h = 0
-bimodal_x_normal_h = 0
+bimodal_x_normal_h = 1
 bimodal_x_normal_h_sigma = 0
 uniform_x_uniform_h = 0
 uniform_x_uniform_h_sigma = 0
 uniform_x_normal_h = 0
-uniform_x_normal_h_sigma = 1
+uniform_x_normal_h_sigma = 0
 
 wf = yn.workFlow()
 vis = yn.Visualization()
@@ -303,8 +304,8 @@ if bimodal_x_normal_h==1:
     sigma_m_2=0
     sigma_h_1 = 1
     sigma_h_2=1
-    sigma_x_1=1
-    sigma_x_2=1
+    sigma_x_1=3*sigma_h_1
+    sigma_x_2=3*sigma_h_1
     runs = 500
     batch_size = 50
     delta_mu = 5
@@ -324,14 +325,14 @@ if bimodal_x_normal_h==1:
             count = 0
             for k in range(runs):
                 success,incrt,incrt_w_n,yes_test,max_rat_pval = wf.multi_run(distribution_m=rng.units_n,distribution_x=rng.dx_n,distribution_h=rng.threshold_n,\
-                    mu_h=[muh1,muh2],sigma_h=[sigma_h_1,sigma_h_2],mu_x=[mux1,mux2],sigma_x=[sigma_x_1,sigma_x_2],err_type=0,number_of_options=number_of_options,\
-                    mu_m=[mu_m_1,mu_m_2],sigma_m=[sigma_m_1,sigma_m_2])
+                    mu_h=List([muh1,muh2]),sigma_h=List([sigma_h_1,sigma_h_2]),mu_x=List([mux1,mux2]),sigma_x=List([sigma_x_1,sigma_x_2]),err_type=0,number_of_options=number_of_options,\
+                    mu_m=List([mu_m_1,mu_m_2]),sigma_m=List([sigma_m_1,sigma_m_2]))
                 if success == 1:
                     count += 1
             mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/runs}
             return mu_va
 
-        # parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
+        parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
 
         vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=number_of_options,z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2)
 
@@ -358,7 +359,7 @@ if bimodal_x_normal_h_sigma==1:
     file_num = 7
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = str(file_num)+'bxnh_delta_sigma_'+str(delta_sigma)+'_sigma_h_vs_sigma_x1_sigma_x2_vs_RCD'+'nop'+str(nop) # 'bxnh_delta_sigma_'+str(delta_sigma)+'_sigma_h_vs_sigma_x1_sigma_x2_vs_RCD'+'nop'+str(nop)
+        save_string = str(file_num)+'bxnh_delta_sigma_'+str(delta_sigma)+'_sigma_h_vs_sigma_x1_sigma_x2_vs_RCD'+'nop'+str(nop) # str(file_num)+
         # save_string = save_data(save_string,continuation)
 
         def sigx1sigh1(sigma_h,sigma_x):
@@ -407,8 +408,8 @@ if uniform_x_uniform_h==1:
     cnt = 11
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = 'uxuh_mu_h_vs_mu_x_vs_RCD_nop' + str(nop) #str(cnt)+
-        save_string = save_data(save_string,continuation)
+        save_string = str(cnt)+'uxuh_mu_h_vs_mu_x_vs_RCD_nop' + str(nop) #str(cnt)+
+        # save_string = save_data(save_string,continuation)
 
         def mux1muh1(muh,mux):
             mux1 = mux + low_x_1
@@ -425,7 +426,7 @@ if uniform_x_uniform_h==1:
             mu_va = {'$\mu_{h_1}$':muh,'$\mu_{h_2}$':muh,'$\mu_{x_1}$': mux,'$\mu_{x_2}$': mux,"success_rate":count/runs}
             return mu_va
 
-        parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
+        # parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
 
         vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=number_of_options,z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2,gaussian=0,uniform=1)
 

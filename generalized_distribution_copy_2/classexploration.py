@@ -15,11 +15,11 @@ from sklearn import linear_model
 import random
 import requests
 import json
+from numba.typed import List
+from math import sqrt,exp
+from numba import guvectorize, float64
 
 path = os.getcwd() + "/results/"
-
-points = []
-
 
 def pushbullet_message(title, body):
     msg = {"type": "note", "title": title, "body": body}
@@ -55,7 +55,7 @@ class Decision_making:
         self.max_ratio_pvalue = self.hypothesis_testing_top_two(pc)
     
     @staticmethod
-    @njit(parallel = True)
+    @njit
     def counter(nop,e_mu,e_sigma,ass_u,e_type,Dx):
         votes = [0 for i in range(nop)]
         no_votes = [0 for i in range(nop)]
@@ -230,35 +230,38 @@ class workFlow:
     def multi_run(self,distribution_m,distribution_h,distribution_x,mu_m,sigma_m,mu_h,sigma_h,mu_x,sigma_x,number_of_options=None,h_type=3,x_type=3,err_type=0,mu_assessment_err= 0,\
         sigma_assessment_err=0,quorum= None):
 
-        pc = distribution_m(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m)
+        pc = List(distribution_m(number_of_options=number_of_options,mu_m=mu_m,sigma_m=sigma_m))
 
         units_distribution = []
         
         for i in pc:
-            units_distribution.append(distribution_h(m_units=int(i),mu_h=mu_h,sigma_h=sigma_h))
+            units_distribution.append(List(distribution_h(m_units=int(i),mu_h=mu_h,sigma_h=sigma_h)))
         
         ref,qc = rng.quality(distribution = distribution_x,number_of_options=number_of_options,x_type=x_type,mu_x=mu_x,sigma_x=sigma_x)
 
         dec = self.majority_decision(number_of_options=number_of_options,Dx = qc,\
-            assigned_units=units_distribution,err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,ref_highest_quality=ref,quorum=quorum,pc=pc)
+            assigned_units=List(units_distribution),err_type=err_type,mu_assessment_err= mu_assessment_err,sigma_assessment_err=sigma_assessment_err,ref_highest_quality=ref,quorum=quorum,pc=pc)
 
         return dec
 
 
 class Prediction:
     @staticmethod
-    @njit
-    def gaussian(x,mu,sigma):
-        f = 0
-        for i in range(len(mu)):
-            k = 1/(np.sqrt(2*np.pi)*sigma[i])
-            f += k*np.exp(-((x-mu[i])**2)/(2*sigma[i]**2))
-        return f
+    @guvectorize([(float64[:], float64[:], float64[:],float64[:])], '(n),(m),(m)->(n)')
+    def gaussian(x,mu,sigma,result):
+        n = x.shape[0]
+        m = mu.shape[0]
+        for j in range(x.shape[0]):
+            f = 0.0
+            for i in range(len(mu)):
+                k = 1/(sqrt(2*np.pi)*sigma[i])
+                f += k*exp(-((x[j]-mu[i])**2)/(2*sigma[i]**2))
+            result[j] = f
 
     @staticmethod
     @njit
     def uniform(x,mu,sigma):
-        f = 0
+        f = 0.0
         for i in range(len(mu)):
             a = (mu[i] - np.sqrt(3)*sigma[i])
             b = (mu[i] + np.sqrt(3)*sigma[i])
@@ -307,13 +310,12 @@ class Prediction:
         return x_
 
     @staticmethod
-    def optimization(x,y,z,max_iter=10000,d = 0.2):
-        min_z = min(z)
+    def optimization(x,y,z,max_iter=2000,d = 0.2):
         iterations = 0
         goodness_of_fit = -np.Inf
         iter = []
         fit_cost = []
-        while iterations<1000:
+        while iterations<max_iter:
             selected = np.random.randint(0,len(x),int(2*len(x)/3))
             maybeInliers_x = []
             maybeInliers_y = []
@@ -337,7 +339,6 @@ class Prediction:
             
             for i in alsoInliers:
                 maybeInliers_z.append(z[i])
-            inliers_z = maybeInliers_z
             params = np.polyfit(inliers_x,inliers_y,deg=1)
             thisgoodness = sum(maybeInliers_z)/len(maybeInliers_z)
             if thisgoodness > goodness_of_fit:
@@ -365,16 +366,16 @@ class Prediction:
         step = 0.0001
         for i in x:
             if x_var_ == '$\mu_{x_1}$':
-                mu = [i,i+delta_mu]
+                mu = List([i,i+delta_mu])
             else:
-                mu = [i-delta_mu,i]
-            sigma = [sigma_x_1,sigma_x_2]
+                mu = List([i-delta_mu,i])
+            
+            sigma = List([sigma_x_1,sigma_x_2])
             start = np.sum(mu)/len(mu) - np.sum(sigma)-5
             stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
             dis_x = np.arange(start,stop,step)
-            pdf =  [distribution_fn(i,mu,sigma) for i in dis_x]
+            pdf =  distribution_fn(dis_x,mu,sigma)
             pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
-            
             _1 = ICPDF_fn(hrcc_area,mu,stop,step,dis_x,pdf)
             x_1.append(_1)
             print(np.round(len(x_1)/len(x),decimals=2),end="\r")
@@ -445,6 +446,7 @@ class Visualization:
                 d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
                 delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
                 self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
+
                 # ESM non integral
 
                 predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(2*line_labels)),prd.z_extractor,prd.optimization)
@@ -502,9 +504,10 @@ class Visualization:
         plt.show()
 
     def graphicPlot(self,a,b,x_name,y_name,z_name,title,save_name,cbar_loc,z_var,z_max_fit=None,z_max_fit_lab = None,options_line=None,line_labels=None,d=None,delta_slope=None):
+        points = []
         fig, ax = plt.subplots()
         z = np.array(z_var).reshape(len(a),len(b))
-        cs = ax.pcolormesh(b,a,z)
+        cs = ax.pcolormesh(b,a,z,shading='auto')
         colors = ["black","brown"]
         if isinstance(options_line, type(None)) == False:
             for j in range(len(options_line)):
@@ -515,8 +518,9 @@ class Visualization:
             plt.plot(b,z_best_fit,color = 'darkgreen',label = 'HRCC = '+str(z_max_fit_lab),linewidth=0.8)
         cbar = fig.colorbar(cs,orientation=cbar_loc)
         cbar.set_label(z_name,fontsize=14)
-        cbar.set_ticks(np.arange(min(z_var),max(z_var),(max(z_var)-min(z_var))/10))
-        cbar.set_clim(0,1)
+        cbar.set_ticks(np.arange(0,1,0.1))
+        cbar.minorticks_on()
+        cs.set_clim(0,1)
         ax.set_aspect('equal', 'box')
         plt.xlim(min(b),max(b))
         plt.ylim(min(a),max(a))
@@ -529,27 +533,33 @@ class Visualization:
         plt.minorticks_on()
         plt.grid(b=True, which='minor', color='black', linestyle='-',linewidth = 0.2,alpha=0.1)
         
-        def onclick(event):
-            global points
+        def onclick(event,points = points):
+            color = 'red'
+            lable = str(len(points)+1)
             print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %('double' if event.dblclick else 'single', event.button,event.x, event.y, event.xdata, event.ydata))
             if event.button == 1:
-                point_line_1 = ax.plot([b[0],round(event.xdata,1)],[round(event.ydata,1),round(event.ydata,1)],color= 'red',linewidth = 0.5)
-                point_line_2 = ax.plot([round(event.xdata,1),round(event.xdata,1)],[a[0],round(event.ydata,1)],color= 'red',linewidth = 0.5)
-                point_lable = ax.text(int(event.xdata+1), int(event.ydata+1), "(%2.1f,%2.1f)"%(event.xdata,event.ydata),fontsize=14)
-                points.append([point_line_1,point_line_2,point_lable])
+                point_line_1 = ax.plot([b[0],round(event.xdata,1)],[round(event.ydata,1),round(event.ydata,1)],color=color,linewidth = 0.5)
+                point_line_2 = ax.plot([round(event.xdata,1),round(event.xdata,1)],[a[0],round(event.ydata,1)],color=color,linewidth = 0.5)
+                point_lable = ax.text(int(event.xdata+1), int(event.ydata+1), lable+"(%2.1f,%2.1f)"%(event.xdata,event.ydata),fontsize=14)
+                verti=z[np.argmin(abs(b-round(event.ydata,1))),np.argmin(abs(a-round(event.xdata,1)))]
+                z_point = cbar.ax.plot([0,1],[verti,verti],color=color,linewidth=0.5)
+                z_p_l = cbar.ax.text(0.4,verti+0.005,lable,fontsize=8)
+                points.append([point_line_1,point_line_2,point_lable,z_point,z_p_l])
             else:
                 for p in range(len(points[-1])):
-                    if p!=2:
+                    if p!=2 and p!=4:
                         points[-1][p][0].remove()
                     else:
                         points[-1][p].remove()
                 del points[-1]
+            
             plt.savefig(save_name,format = "pdf")
+            return points
 
         point = fig.canvas.mpl_connect('button_press_event', onclick)
-
         pushbullet_message('Python Code','Pick the point! ')
         plt.show()
+        
         
     def barPlot(self,quor,opt_v,save_name,correct):
         fig, ax = plt.subplots()
