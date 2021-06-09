@@ -259,14 +259,17 @@ class Prediction:
             result[j] = f
 
     @staticmethod
-    @njit
-    def uniform(x,mu,sigma):
-        f = 0.0
-        for i in range(len(mu)):
-            a = (mu[i] - np.sqrt(3)*sigma[i])
-            b = (mu[i] + np.sqrt(3)*sigma[i])
-            f += 1/abs(b-a)
-        return f
+    @guvectorize([(float64[:], float64[:], float64[:],float64[:])], '(n),(m),(m)->(n)')
+    def uniform(x,mu,sigma,result):
+        n = x.shape[0]
+        m = mu.shape[0]
+        for j in range(x.shape[0]):
+            f = 0.0
+            for i in range(len(mu)):
+                a = (mu[i] - np.sqrt(3)*sigma[i])
+                b = (mu[i] + np.sqrt(3)*sigma[i])
+                f += 1/abs(b-a)
+            result[j] = f
 
     @staticmethod
     @njit
@@ -429,8 +432,8 @@ class Visualization:
             if z1_var_ != None:
                 z1.append(i[z1_var_])
 
-            print(np.round(len(z)/len(opt_var),decimals=2),end="\r")
-        print(np.round(len(z)/len(opt_var),decimals=2))
+            print(np.round(100*len(z)/len(opt_var),decimals=2),end="\r")
+        print(np.round(100*len(z)/len(opt_var),decimals=2))
         prd = Prediction()
         if 'mu' in x_var_:
             HRCC = prd.optimization(xa,ya,z_only_best)
