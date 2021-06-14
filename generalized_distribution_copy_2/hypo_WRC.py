@@ -26,8 +26,10 @@ bimodal_x_normal_h = 0
 bimodal_x_normal_h_sigma = 0
 uniform_x_uniform_h = 0
 uniform_x_uniform_h_sigma = 0
-uniform_x_normal_h = 1
+uniform_x_normal_h = 0
 uniform_x_normal_h_sigma = 0
+normal_x_normal_h = 1
+normal_x_normal_h_sigma = 1
 
 wf = yn.workFlow()
 vis = yn.Visualization()
@@ -80,14 +82,14 @@ def save_data(save_string,continuation):
 def pushbullet_message(title, body):
     msg = {"type": "note", "title": title, "body": body}
     TOKEN = 'o.YlTBKuQWnkOUsCP9ZxzWC9pvFNz1G0mi'
-    resp = requests.post('https://api.pushbullet.com/v2/pushes', 
-                         data=json.dumps(msg),
-                         headers={'Authorization': 'Bearer ' + TOKEN,
-                                  'Content-Type': 'application/json'})
-    if resp.status_code != 200:
-        raise Exception('Error',resp.status_code)
-    else:
-        print ('Message sent')
+    # resp = requests.post('https://api.pushbullet.com/v2/pushes', 
+    #                      data=json.dumps(msg),
+    #                      headers={'Authorization': 'Bearer ' + TOKEN,
+    #                               'Content-Type': 'application/json'})
+    # if resp.status_code != 200:
+    #     raise Exception('Error',resp.status_code)
+    # else:
+    #     print ('Message sent')
 
 if WRC_normal==1:
     mu_m = [i for i in range(500,1000)]
@@ -311,11 +313,11 @@ if bimodal_x_normal_h==1:
     delta_mu = 5
     mu_x = [np.round(i*0.1,decimals=1) for i in range(151)]
     mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
-    cnt = 3
+    cnt = 23
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = 'bxnh_delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD_nop'+str(nop) # str(cnt)+
-        save_string = save_data(save_string,continuation)
+        save_string = str(cnt)+'bxnh_delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x1_mu_x2_vs_RCD_nop'+str(nop) # str(cnt)+
+        # save_string = save_data(save_string,continuation)
 
         def mux1muh1(muh,mux):
             mux1 = mux
@@ -332,7 +334,7 @@ if bimodal_x_normal_h==1:
             mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/runs}
             return mu_va
 
-        parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
+        # parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
 
         vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=number_of_options,z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2)
 
@@ -405,11 +407,11 @@ if uniform_x_uniform_h==1:
     delta_mu = 0
     mu_x = [np.round(i*0.1,decimals=1) for i in range(151)]
     mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
-    cnt = 11
+    cnt = 27
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = 'uxuh_mu_h_vs_mu_x_vs_RCD_nop' + str(nop) #str(cnt)+
-        save_string = save_data(save_string,continuation)
+        save_string = str(cnt)+'uxuh_mu_h_vs_mu_x_vs_RCD_nop' + str(nop) #str(cnt)+
+        # save_string = save_data(save_string,continuation)
 
         def mux1muh1(muh,mux):
             mux1 = mux + low_x_1
@@ -426,7 +428,7 @@ if uniform_x_uniform_h==1:
             mu_va = {'$\mu_{h_1}$':muh,'$\mu_{h_2}$':muh,'$\mu_{x_1}$': mux,'$\mu_{x_2}$': mux,"success_rate":count/runs}
             return mu_va
 
-        parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
+        # parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
 
         vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=number_of_options,z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2,gaussian=0,uniform=1)
 
@@ -497,11 +499,11 @@ if uniform_x_normal_h==1:
     delta_mu = 0
     mu_x = [np.round(i*0.1,decimals=1) for i in range(151)]
     mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
-    cnt = 17
+    cnt = 30
     for nop in number_of_opts:
         number_of_options = nop
-        save_string = 'uxnh_mu_h_vs_mu_x_vs_RCD_nop'+str(nop) # str(cnt)+
-        save_string = save_data(save_string,continuation)
+        save_string = str(cnt)+'uxnh_mu_h_vs_mu_x_vs_RCD_nop'+str(nop) # str(cnt)+
+        # save_string = save_data(save_string,continuation)
 
         def mux1muh1(muh,mux):
             mux1 = mux + low_x_1
@@ -518,7 +520,7 @@ if uniform_x_normal_h==1:
             mu_va = {'$\mu_{h_1}$':muh,'$\mu_{h_2}$':muh,'$\mu_{x_1}$': mux,'$\mu_{x_2}$': mux,"success_rate":count/runs}
             return mu_va
 
-        parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
+        # parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
 
         vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=number_of_options,z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2,gaussian=0,uniform=1)
 
@@ -570,3 +572,92 @@ if uniform_x_normal_h_sigma==1:
         pushbullet_message('Python Code','Results out! '+message)
         cnt += 1
 
+if normal_x_normal_h==1:
+    continuation = False
+    number_of_opts = [2,5,10]
+    mu_m_1=100
+    sigma_m_1=0
+    mu_m_2=100
+    sigma_m_2=0
+    sigma_h_1 = 1
+    sigma_h_2=1
+    sigma_x_1=sigma_h_1
+    sigma_x_2=sigma_h_1
+    runs = 500
+    batch_size = 50
+    delta_mu = 0
+    mu_x = [np.round(i*0.1,decimals=1) for i in range(151)]
+    mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
+    cnt = 23
+    for nop in number_of_opts:
+        number_of_options = nop
+        save_string = 'nxnh_delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x_vs_RCD_nop'+str(nop) # str(cnt)+
+        save_string = save_data(save_string,continuation)
+
+        def mux1muh1(muh,mux):
+            mux1 = mux
+            mux2 = delta_mu + mux
+            muh1 = muh
+            muh2 = muh
+            count = 0
+            for k in range(runs):
+                success,incrt,incrt_w_n,yes_test,max_rat_pval = wf.multi_run(distribution_m=rng.units_n,distribution_x=rng.dx_n,distribution_h=rng.threshold_n,\
+                    mu_h=List([muh1,muh2]),sigma_h=List([sigma_h_1,sigma_h_2]),mu_x=List([mux1,mux2]),sigma_x=List([sigma_x_1,sigma_x_2]),err_type=0,number_of_options=number_of_options,\
+                    mu_m=List([mu_m_1,mu_m_2]),sigma_m=List([sigma_m_1,sigma_m_2]))
+                if success == 1:
+                    count += 1
+            mu_va = {'$\mu_{h_1}$':muh1,'$\mu_{h_2}$':muh2,'$\mu_{x_1}$': mux1,'$\mu_{x_2}$': mux2,"success_rate":count/runs}
+            return mu_va
+
+        parallel(mux1muh1,mu_h,mu_x,columns_name=['$\mu_{h_1}$','$\mu_{h_2}$','$\mu_{x_1}$','$\mu_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(mu_h))
+
+        vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\mu_{x_1}$',y_var_='$\mu_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=number_of_options,z_var_='success_rate',plot_type='graphics',sigma_x_1=sigma_x_1,delta_mu=delta_mu,sigma_x_2=sigma_x_2)
+
+        message = str(nop)+' number of options simulation finished'
+        pushbullet_message('Python Code','Results out! '+message)
+        cnt += 1
+
+if normal_x_normal_h_sigma==1:
+    continuation = False
+    number_of_opts = [2,5,10]
+    mu_m_1=100
+    sigma_m_1=0
+    mu_m_2=100
+    sigma_m_2=0
+    mu_h_1 = 0
+    mu_h_2=0
+    mu_x_1=0
+    mu_x_2=0
+    runs = 500
+    batch_size = 50
+    delta_sigma = 0
+    sigma_x = [np.round(i*0.1,decimals=1) for i in range(151)]
+    sigma_h = [np.round(i*0.1,decimals=1) for i in range(151)]
+    file_num = 7
+    for nop in number_of_opts:
+        number_of_options = nop
+        save_string = 'nxnh_delta_sigma_'+str(delta_sigma)+'_sigma_h_vs_sigma_x_vs_RCD'+'nop'+str(nop) # str(file_num)+
+        save_string = save_data(save_string,continuation)
+
+        def sigx1sigh1(sigma_h,sigma_x):
+            sigma_x_1 = sigma_x
+            sigma_x_2 = delta_sigma + sigma_x
+            sigma_h_1 = sigma_h
+            sigma_h_2 = sigma_h
+            count = 0
+            for k in range(runs):
+                success,incrt,incrt_w_n,yes_test,max_rat_pval = wf.multi_run(distribution_m=rng.units_n,distribution_x=rng.dx_n,distribution_h=rng.threshold_n,\
+                    mu_h=[mu_h_1,mu_h_2],sigma_h=[sigma_h_1,sigma_h_2],mu_x=[mu_x_1,mu_x_2],sigma_x=[sigma_x_1,sigma_x_2],err_type=0,number_of_options=number_of_options,\
+                    mu_m=[mu_m_1,mu_m_2],sigma_m=[sigma_m_1,sigma_m_2])
+                if success == 1:
+                    count += 1
+            mu_va = {'$\sigma_{h_1}$':sigma_h_1,'$\sigma_{h_2}$':sigma_h_2,'$\sigma_{x_1}$': sigma_x_1,'$\sigma_{x_2}$': sigma_x_2,"success_rate":count/runs}
+            return mu_va
+
+        parallel(sigx1sigh1,sigma_h,sigma_x,columns_name=['$\sigma_{h_1}$','$\sigma_{h_2}$','$\sigma_{x_1}$','$\sigma_{x_2}$',"success_rate"],save_string=save_string,batch_size=3*len(sigma_h))
+
+        vis.data_visualize(file_name=save_string+".csv",save_plot=save_string,x_var_='$\sigma_{x_1}$',y_var_='$\sigma_{h_1}$',cbar_orien="vertical",num_of_opts=nop,line_labels=number_of_options,z_var_='success_rate',plot_type='graphics',gaussian=0,uniform=0)
+
+        message = str(nop)+' number of options simulation finished'
+        pushbullet_message('Python Code','Results out! '+message)
+        file_num += 1

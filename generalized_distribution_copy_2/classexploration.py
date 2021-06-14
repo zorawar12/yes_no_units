@@ -1,7 +1,8 @@
-#!/Users/swadhinagrawal/opt/anaconda3/envs/cdm/bin/python
+# !/Users/swadhinagrawal/opt/anaconda3/envs/cdm/bin/python
 # Author: Swadhin Agrawal
 # E-mail: swadhin20@iiserb.ac.in
 
+from numba.core.types import scalars
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.numeric import count_nonzero
@@ -18,20 +19,21 @@ import json
 from numba.typed import List
 from math import sqrt,exp
 from numba import guvectorize, float64
+from scipy import stats
 
 path = os.getcwd() + "/results/"
 
 def pushbullet_message(title, body):
     msg = {"type": "note", "title": title, "body": body}
     TOKEN = 'o.YlTBKuQWnkOUsCP9ZxzWC9pvFNz1G0mi'
-    resp = requests.post('https://api.pushbullet.com/v2/pushes', 
-                         data=json.dumps(msg),
-                         headers={'Authorization': 'Bearer ' + TOKEN,
-                                  'Content-Type': 'application/json'})
-    if resp.status_code != 200:
-        raise Exception('Error',resp.status_code)
-    else:
-        print ('Message sent')
+    # resp = requests.post('https://api.pushbullet.com/v2/pushes', 
+    #                      data=json.dumps(msg),
+    #                      headers={'Authorization': 'Bearer ' + TOKEN,
+    #                               'Content-Type': 'application/json'})
+    # if resp.status_code != 200:
+    #     raise Exception('Error',resp.status_code)
+    # else:
+    #     print ('Message sent')
 
 class Decision_making:
     def __init__(self,number_of_options,err_type,mu_assessment_err,sigma_assessment_err):
@@ -263,53 +265,60 @@ class Prediction:
     def uniform(x,mu,sigma,result):
         n = x.shape[0]
         m = mu.shape[0]
-        for j in range(x.shape[0]):
+        for j in range(n):
             f = 0.0
-            for i in range(len(mu)):
+            for i in range(m):
                 a = (mu[i] - np.sqrt(3)*sigma[i])
                 b = (mu[i] + np.sqrt(3)*sigma[i])
-                f += 1/abs(b-a)
+                if x[j]<=b and x[j]>=a:
+                    f += 1/abs(b-a)
             result[j] = f
 
     @staticmethod
     @njit
     def ICPDF(area,mu,stop,step,x,pdf):
         # import faulthandler; faulthandler.enable()
-        if len(mu)>1:    
-            if mu[0]!= mu[1]:
-                if area<=0.25:
-                    dummy_area =0.25
-                    x_ = mu[0]
-                elif area>0.25 and area<=0.5:
-                    dummy_area =0.5
-                    x_ = (mu[0]+mu[1])/2
-                elif area>0.5 and area<=0.75:
-                    dummy_area =0.75
-                    x_ = mu[1]
-                elif area>0.75 and area<=1:
-                    dummy_area =1
-                    x_ = stop
-            else:
-                if area<=0.5:
-                    dummy_area =0.5
-                    x_ = mu[0]
-                else:
-                    dummy_area =1
-                    x_ = stop
-        else:
-            if area<=0.5:
-                dummy_area =0.5
-                x_ = mu[0]
-            else:
-                dummy_area =1
-                x_ = stop
-        
+        # if len(mu)>1:    
+        #     if mu[0]!= mu[1]:
+        #         if area<=0.25:
+        #             dummy_area =0.25
+        #             x_ = mu[0]
+        #         elif area>0.25 and area<=0.5:
+        #             dummy_area =0.5
+        #             x_ = (mu[0]+mu[1])/2.0
+        #         elif area>0.5 and area<=0.75:
+        #             dummy_area =0.75
+        #             x_ = mu[1]
+        #         elif area>0.75 and area<=1:
+        #             dummy_area =1
+        #             x_ = stop
+        #     else:
+        #         if area<=0.5:
+        #             dummy_area =0.5
+        #             x_ = mu[0]
+        #         else:
+        #             dummy_area =1
+        #             x_ = stop
+        # else:
+        #     if area<=0.5:
+        #         dummy_area =0.5
+        #         x_ = mu[0]
+        #     else:
+        #         dummy_area =1
+        #         x_ = stop
+        dummy_area = 0.5
+        x_ = (mu[0]+mu[1])/2.0
         count = np.argmin(np.abs(x-x_))
-
-        while dummy_area-area>0.0005:
-            dummy_area -= pdf[count]*step
-            x_ -= step
-            count -= 1
+        
+        while abs(dummy_area-area)>0.0001:
+            if dummy_area>area:
+                count -= 1
+                dummy_area -= pdf[count]*step
+                x_ -= step
+            elif area>dummy_area:
+                count += 1
+                dummy_area += pdf[count]*step
+                x_ += step
         return x_
 
     @staticmethod
@@ -585,79 +594,79 @@ if crosscheck == 1:
     fig = plt.figure()
     ax = fig.add_subplot(121)
     step = 0.0001
-    mu = [5,8]
-    sigma = [1,1]
+    mu = List([5,8])
+    sigma = List([1,1])
     start = np.sum(mu)/len(mu) - np.sum(sigma)-5
     stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
     x = np.arange(start,stop,step)
-    pdfg = [prd.gaussian(i,mu,sigma) for i in x]
+    pdfg = prd.gaussian(x,mu,sigma)
     area = np.sum(pdfg)*step
     pdfg = pdfg/area
     print(np.sum(pdfg)*step)
     plt.plot(x,pdfg)
-    pdfu = [prd.uniform(i,mu,sigma) for i in x]
+    pdfu = prd.uniform(x,mu,sigma)
     area = np.sum(pdfu)*step
     pdfu = pdfu/area
     print(np.sum(pdfu)*step)
     plt.plot(x,pdfu)
     x_ = prd.ICPDF(0.8,mu,stop,step,x,pdfg)
     print(x_)
-    print(prd.gaussian(x_,mu,sigma))
+    print(prd.gaussian(List([x_]),mu,sigma))
     ax.fill_between(x[:np.argmin(np.abs(x-x_))],0,pdfg[:np.argmin(np.abs(x-x_))],facecolor='blue')
 
     x_ = prd.ICPDF(0.8,mu,stop,step,x,pdfu)
     print(x_)
-    print(prd.uniform(x_,mu,sigma)/area)
+    print(prd.uniform(List([x_]),mu,sigma)/area)
     ax.fill_between(x[:np.argmin(np.abs(x-x_))],0,pdfu[:np.argmin(np.abs(x-x_))],facecolor='orange')
     plt.show()
 
 check_qualityrange = 0
 if check_qualityrange == 1:
     fig = plt.figure()
-    ax = fig.add_subplot(131)
-    step = 0.0001
-    mu = [5,9]
-    sigma = [1,1]
-    start = np.sum(mu)/len(mu) - np.sum(sigma)-max(sigma)*45
-    stop = np.sum(mu)/len(mu) + np.sum(sigma)+max(sigma)*45
-    x = np.arange(start,stop,step)
-    pdfg = [prd.gaussian(i,mu,sigma) for i in x]
-    area = np.sum(pdfg)*step
-    pdfg = pdfg/area
-    print(np.sum(pdfg)*step)
-    plt.plot(x,pdfg)
-
-    ax1 = fig.add_subplot(132)
+    ax = fig.add_subplot(121)
+    step = 0.00001
+    mu_x=List([5,10])
+    sigma_x=List([5,5])
+    start = np.sum(mu_x)/len(mu_x) - np.sum(sigma_x)-max(sigma_x)*45
+    stop = np.sum(mu_x)/len(mu_x) + np.sum(sigma_x)+max(sigma_x)*45
+    dis_x = np.round(np.arange(start,stop,step),decimals=4)
+    pdf =  prd.gaussian(dis_x,mu_x,sigma_x)
+    area = (np.sum(pdf)*step)
+    pdf = np.multiply(pdf,1/area)
+    ax.plot(dis_x,pdf)
+    ax1 = fig.add_subplot(122)
     number_of_options = [10]
     for nop in number_of_options:
-        mu_x=[5,9]
-        sigma_x=[1,1]
-        start = np.sum(mu_x)/len(mu_x) - np.sum(sigma_x)-max(sigma_x)*45
-        stop = np.sum(mu_x)/len(mu_x) + np.sum(sigma_x)+max(sigma_x)*45
-        dis_x = np.round(np.arange(start,stop,step),decimals=4)
-        pdf =  [prd.gaussian(i,mu_x,sigma_x) for i in dis_x]
-        pdf = np.multiply(pdf,1/(np.sum(pdf)*step))
         slices = []
         mid_slices=[]
-        for i in range(nop-1,0,-1):
-            ESM = prd.ICPDF(1.0-(i/nop),mu_x,stop,step,dis_x,pdf)
+        for i in range(1,nop,1):
+            ESM = prd.ICPDF(float(i)/nop,mu_x,stop,step,dis_x,pdf)
             slices.append(np.round(ESM,decimals=3))
-
+        print(slices)
         for i in range(2*nop-2,0,-1):
             if i%2!=0:
                 mid_slices.append(np.round(prd.ICPDF(1.0-(i/(2*nop)),mu_x,stop,step,dis_x,pdf),decimals=3))
 
-        number_of_colors = nop+2
+        number_of_colors = nop
 
         color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
              for i in range(number_of_colors)]
         for i in range(len(slices)+1):
             if i!=0 and i!=len(slices):
-                ax.fill_between(x[np.argmin(np.abs(x-slices[i-1])):np.argmin(np.abs(x-slices[i]))],0,pdfg[np.argmin(np.abs(x-slices[i-1])):np.argmin(np.abs(x-slices[i]))],facecolor=color[i])
+                x1 = np.arange(slices[i-1],slices[i],0.0001)
+                pdf1 =  prd.gaussian(x1,mu_x,sigma_x)
+                pdf1 = np.multiply(pdf1,1/area)
+                ax.fill_between(x1,0,pdf1,facecolor=color[i])
             elif i==0:
-                ax.fill_between(x[np.argmin(np.abs(x-start)):np.argmin(np.abs(x-slices[i]))],0,pdfg[np.argmin(np.abs(x-start)):np.argmin(np.abs(x-slices[i]))],facecolor=color[i])
+                x1 = np.arange(start,slices[i],0.0001)
+                pdf1 =  prd.gaussian(x1,mu_x,sigma_x)
+                pdf1 = np.multiply(pdf1,1/area)
+                ax.fill_between(x1,0,pdf1,facecolor=color[i])
             elif i==len(slices):
-                ax.fill_between(x[np.argmin(np.abs(x-slices[i-1])):np.argmin(np.abs(x-stop))],0,pdfg[np.argmin(np.abs(x-slices[i-1])):np.argmin(np.abs(x-stop))],facecolor=color[i])
+                x1 = np.arange(slices[-1],stop,0.0001)
+                pdf1 =  prd.gaussian(x1,mu_x,sigma_x)
+                pdf1 = np.multiply(pdf1,1/area)
+                ax.fill_between(x1,0,pdf1,facecolor=color[i])
         bests = []
         for i in range(100):
             ref_qual,options_quality = rng.quality(distribution=rng.dx_n,mu_x=mu_x,sigma_x=sigma_x,number_of_options=nop)
@@ -676,19 +685,121 @@ if check_qualityrange == 1:
         # # Set the xticklabels to a string that tells us what the bin edges were
         ax1.set_xticklabels(['{}'.format(np.round(slices[i],decimals=2)) for i,j in enumerate(hist)])
 
-        ESM = prd.ICPDF(1.0-(1/(2*nop)),mu_x,stop,step,dis_x,pdf)
+        # ESM = prd.ICPDF(1.0-(1/(2*nop)),mu_x,stop,step,dis_x,pdf)
 
-        ESMi = 0
-        areas = np.round(np.arange(0,1,step),decimals=4)
-        for area in areas:
-            inverse_P =  prd.ICPDF(area**(1/nop),mu_x,stop,step,dis_x,pdf)
-            ESMi += inverse_P*step
+        # ESMi = 0
+        # areas = np.round(np.arange(0,1,step),decimals=4)
+        # for area in areas:
+        #     inverse_P =  prd.ICPDF(area**(1/nop),mu_x,stop,step,dis_x,pdf)
+        #     ESMi += inverse_P*step
 
-        print(ESM)
-        print(ESMi)
-        ax2 = fig.add_subplot(133)
-        plt.axvline(ESM,0,500,color='orange',label = 'Non-integral')
-        plt.axvline(ESMi,0,500,color='red',label = 'Integral')
-        plt.legend()
+        # print(ESM)
+        # print(ESMi)
+        # ax2 = fig.add_subplot(133)
+        # plt.axvline(ESM,0,500,color='orange',label = 'Non-integral')
+        # plt.axvline(ESMi,0,500,color='red',label = 'Integral')
+        # plt.legend()
     plt.show()
+
+distributions = 0
+if distributions == 1:
+    step = 0.0001
+    var_mu = List([i for i in range(10)])
+    var_sigma = List([1+i for i in range(10)])
+    fig,axs = plt.subplots(len(var_mu),2*len(var_sigma))
+    for j in range(len(var_mu)):
+        delta_mu = 5 +j
+        for k in range(len(var_sigma)):
+            delta_sig = 0+k
+            mu = List([var_mu[j],var_mu[j]+delta_mu])
+            sigma = List([var_sigma[k],var_sigma[k]+delta_sig])
+            start = np.sum(mu)/len(mu) - np.sum(sigma)-5
+            stop = np.sum(mu)/len(mu) + np.sum(sigma)+5
+            x = np.arange(start,stop,step)
+
+
+            pdfg = prd.uniform(x,mu,sigma)
+            area = np.sum(pdfg)*step
+            pdfg = pdfg/area
+            axs[j,k].plot(x,pdfg)
+
+
+    plt.show()
+
 #########################################################
+
+distributions1 = 1
+if distributions1 == 1:
+    step = 0.0001
+    var_mu = List([i for i in range(3)])
+    var_sigma = List([1+i for i in range(3)])
+    fig,axs = plt.subplots(len(var_mu),2*len(var_sigma))
+    for j in range(len(var_mu)):
+        delta_mu = 5
+        for k in range(len(var_sigma)):
+            delta_sig = 0 + k
+            mu_x = List([var_mu[j],var_mu[j]+delta_mu])
+            sigma_x = List([var_sigma[k],var_sigma[k]])
+            start = np.sum(mu_x)/len(mu_x) - np.sum(sigma_x)-5
+            stop = np.sum(mu_x)/len(mu_x) + np.sum(sigma_x)+5
+
+            dis_x = np.round(np.arange(start,stop,step),decimals=4)
+            pdf =  prd.uniform(dis_x,mu_x,sigma_x)
+            area = (np.sum(pdf)*step)
+            pdf = np.multiply(pdf,1/area)
+            axs[j,2*k].plot(dis_x,pdf)
+
+            number_of_options = [10]
+            for nop in number_of_options:
+                slices = []
+                mid_slices=[]
+                for i in range(1,nop,1):
+                    ESM = prd.ICPDF(float(i)/nop,mu_x,stop,step,dis_x,pdf)
+                    slices.append(np.round(ESM,decimals=3))
+                for i in range(2*nop-2,0,-1):
+                    if i%2!=0:
+                        mid_slices.append(np.round(prd.ICPDF(1.0-(i/(2*nop)),mu_x,stop,step,dis_x,pdf),decimals=3))
+
+                number_of_colors = nop
+
+                color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
+                    for i in range(number_of_colors)]
+                for i in range(len(slices)+1):
+                    if i!=0 and i!=len(slices):
+                        x1 = np.arange(slices[i-1],slices[i],0.0001)
+                        pdf1 =  prd.uniform(x1,mu_x,sigma_x)
+                        pdf1 = np.multiply(pdf1,1/area)
+                        axs[j,2*k].fill_between(x1,0,pdf1,facecolor=color[i])
+                    elif i==0:
+                        x1 = np.arange(start,slices[i],0.0001)
+                        pdf1 =  prd.uniform(x1,mu_x,sigma_x)
+                        pdf1 = np.multiply(pdf1,1/area)
+                        axs[j,2*k].fill_between(x1,0,pdf1,facecolor=color[i])
+                    elif i==len(slices):
+                        x1 = np.arange(slices[-1],stop,0.0001)
+                        pdf1 =  prd.uniform(x1,mu_x,sigma_x)
+                        pdf1 = np.multiply(pdf1,1/area)
+                        axs[j,2*k].fill_between(x1,0,pdf1,facecolor=color[i])
+                bests = []
+                for i in range(100):
+                    ref_qual,options_quality = rng.quality(distribution=rng.dx_u,mu_x=mu_x,sigma_x=sigma_x,number_of_options=nop)
+                    best = max(options_quality)
+                    bests.append(best)
+                slices.append(stop)
+                slices.append(stop+1)
+
+                hist, bin_edges = np.histogram(bests,slices) # make the histogram
+                # # Plot the histogram heights against integers on the x axis
+                axs[j,2*k+1].bar(range(1,len(hist)+1,1),hist,width=1) 
+
+                # # Set the ticks to the middle of the bars
+                axs[j,2*k+1].set_xticks([0.5+i for i,j in enumerate(hist)])
+
+                # # Set the xticklabels to a string that tells us what the bin edges were
+                axs[j,2*k+1].set_xticklabels(['{}'.format(int(slices[i])) for i,j in enumerate(hist)])
+
+    plt.show()
+
+
+
+    
