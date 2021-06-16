@@ -728,7 +728,7 @@ if distributions == 1:
 
 #########################################################
 
-distributions1 = 1
+distributions1 = 0
 if distributions1 == 1:
     step = 0.0001
     var_mu = List([i for i in range(3)])

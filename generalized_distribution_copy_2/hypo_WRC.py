@@ -29,7 +29,7 @@ uniform_x_uniform_h_sigma = 0
 uniform_x_normal_h = 0
 uniform_x_normal_h_sigma = 0
 normal_x_normal_h = 1
-normal_x_normal_h_sigma = 1
+normal_x_normal_h_sigma = 0
 
 wf = yn.workFlow()
 vis = yn.Visualization()
@@ -579,16 +579,17 @@ if normal_x_normal_h==1:
     sigma_m_1=0
     mu_m_2=100
     sigma_m_2=0
-    sigma_h_1 = 1
-    sigma_h_2=1
-    sigma_x_1=sigma_h_1
-    sigma_x_2=sigma_h_1
+    
+    sigma_x_1=1
+    sigma_x_2=1
+    sigma_h_1 = 3*sigma_x_1
+    sigma_h_2= 3*sigma_x_1
     runs = 500
     batch_size = 50
     delta_mu = 0
     mu_x = [np.round(i*0.1,decimals=1) for i in range(151)]
     mu_h = [np.round(i*0.1,decimals=1) for i in range(151)]
-    cnt = 23
+    cnt = 44
     for nop in number_of_opts:
         number_of_options = nop
         save_string = 'nxnh_delta_mu_'+str(delta_mu)+'_mu_h_vs_mu_x_vs_RCD_nop'+str(nop) # str(cnt)+
@@ -624,10 +625,10 @@ if normal_x_normal_h_sigma==1:
     sigma_m_1=0
     mu_m_2=100
     sigma_m_2=0
-    mu_h_1 = 0
-    mu_h_2=0
-    mu_x_1=0
-    mu_x_2=0
+    mu_h_1 = 1
+    mu_h_2=1
+    mu_x_1=3
+    mu_x_2=3
     runs = 500
     batch_size = 50
     delta_sigma = 0
