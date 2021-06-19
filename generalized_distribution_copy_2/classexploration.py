@@ -2,6 +2,7 @@
 # Author: Swadhin Agrawal
 # E-mail: swadhin20@iiserb.ac.in
 
+from operator import le
 from numba.core.types import scalars
 import numpy as np
 import matplotlib.pyplot as plt
@@ -278,7 +279,10 @@ class Prediction:
     @njit
     def ICPDF(area,mu,stop,step,x,pdf):
         # import faulthandler; faulthandler.enable()
-        # if len(mu)>1:    
+        if len(mu)>1:    
+            dummy_area = 0.5
+            x_ = (mu[0]+mu[1])/2.0
+            count = np.argmin(np.abs(x-x_))
         #     if mu[0]!= mu[1]:
         #         if area<=0.25:
         #             dummy_area =0.25
@@ -299,15 +303,10 @@ class Prediction:
         #         else:
         #             dummy_area =1
         #             x_ = stop
-        # else:
-        #     if area<=0.5:
-        #         dummy_area =0.5
-        #         x_ = mu[0]
-        #     else:
-        #         dummy_area =1
-        #         x_ = stop
-        dummy_area = 0.5
-        x_ = (mu[0]+mu[1])/2.0
+        else:
+            dummy_area =0.5
+            x_ = mu[0]
+
         count = np.argmin(np.abs(x-x_))
         
         while abs(dummy_area-area)>0.0001:
@@ -373,7 +372,7 @@ class Prediction:
         return z_extracted
 
     @staticmethod
-    def Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn,hrcc_area,extractor,optimizer):
+    def Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,distribution_fn,ICPDF_fn,hrcc_area,extractor,optimizer,nop):
         x_1 = []
         step = 0.0001
         for i in x:
@@ -454,44 +453,44 @@ class Visualization:
             if gaussian ==1:
                 self.linePlot(HRCC[2],HRCC[3],x_name='Number of iterations',y_name='Average HRCC',z_name=[str(HRCC[1])],title='Maximizing HRCC for best fit',save_name=path+save_plot+'HRCC.pdf')
                 # Mean of ESM and ES2M
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(line_labels)),prd.z_extractor,prd.optimization)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(line_labels)),prd.z_extractor,prd.optimization,line_labels)
                 d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
                 delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
                 self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
-                # ESM non integral
+                # # ESM non integral
 
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(2*line_labels)),prd.z_extractor,prd.optimization)
-                d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
-                delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
-                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
+                # predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(1.0/(2*line_labels)),prd.z_extractor,prd.optimization,line_labels)
+                # d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
+                # delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
+                # self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
-                # ES2M non integral
+                # # ES2M non integral
 
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(3.0/(2*line_labels)),prd.z_extractor,prd.optimization)
-                d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
-                delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
-                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
+                # predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.gaussian,prd.ICPDF,1.0-(3.0/(2*line_labels)),prd.z_extractor,prd.optimization,line_labels)
+                # d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
+                # delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
+                # self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
             if uniform ==1:
                 self.linePlot(HRCC[2],HRCC[3],x_name='Number of iterations',y_name='Average HRCC',z_name=[str(HRCC[1])],title='Maximizing HRCC for best fit',save_name=path+save_plot+'HRCC.pdf')
                 # mean ESM and ES2M
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(1.0/(line_labels)),prd.z_extractor,prd.optimization)
+                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(1.0/(line_labels)),prd.z_extractor,prd.optimization,line_labels)
                 d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
                 delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
                 self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_meanESMES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
-                # ESM non integral
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(1.0/(2*line_labels)),prd.z_extractor,prd.optimization)
-                d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
-                delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
-                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
+                # # ESM non integral
+                # predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(1.0/(2*line_labels)),prd.z_extractor,prd.optimization,line_labels)
+                # d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
+                # delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
+                # self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ESM.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
-                # ES2M non integral
-                predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(3.0/(2*line_labels)),prd.z_extractor,prd.optimization)
-                d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
-                delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
-                self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
+                # # ES2M non integral
+                # predicted_hrcc = prd.Hrcc_predict(delta_mu,x_var_,x,y,z,sigma_x_1,sigma_x_2,line_labels,prd.uniform,prd.ICPDF,1.0-(3.0/(2*line_labels)),prd.z_extractor,prd.optimization,line_labels)
+                # d = np.round(abs(predicted_hrcc[0][1]-HRCC[0][1])/ np.sqrt(HRCC[0][0]**2 +1),decimals=2)
+                # delta_slope = np.round(abs(predicted_hrcc[0][0]-HRCC[0][0]),decimals=2)
+                # self.graphicPlot(a= y,b=x,x_name=r'%s'%x_var_,y_name=r'%s'%y_var_,z_name=z_var_,title="Number_of_options = "+str(num_of_opts),save_name=path+save_plot+x_var_[2:-1]+y_var_[2:-1]+'RCD_ES2M.pdf',cbar_loc=cbar_orien,z_var=z,z_max_fit = HRCC[0],z_max_fit_lab=HRCC[1],options_line=[predicted_hrcc[0]],line_labels=[line_labels,predicted_hrcc[1]],d=d,delta_slope=delta_slope)
 
         elif plot_type == 'line':
             z = z + z1
@@ -685,20 +684,20 @@ if check_qualityrange == 1:
         # # Set the xticklabels to a string that tells us what the bin edges were
         ax1.set_xticklabels(['{}'.format(np.round(slices[i],decimals=2)) for i,j in enumerate(hist)])
 
-        # ESM = prd.ICPDF(1.0-(1/(2*nop)),mu_x,stop,step,dis_x,pdf)
+        ESM = prd.ICPDF(1.0-(1/(2*nop)),mu_x,stop,step,dis_x,pdf)
 
-        # ESMi = 0
-        # areas = np.round(np.arange(0,1,step),decimals=4)
-        # for area in areas:
-        #     inverse_P =  prd.ICPDF(area**(1/nop),mu_x,stop,step,dis_x,pdf)
-        #     ESMi += inverse_P*step
+        ESMi = 0
+        areas = np.round(np.arange(0,1,step),decimals=4)
+        for area in areas:
+            inverse_P =  prd.ICPDF(area**(1/nop),mu_x,stop,step,dis_x,pdf)
+            ESMi += inverse_P*step
 
-        # print(ESM)
-        # print(ESMi)
-        # ax2 = fig.add_subplot(133)
-        # plt.axvline(ESM,0,500,color='orange',label = 'Non-integral')
-        # plt.axvline(ESMi,0,500,color='red',label = 'Integral')
-        # plt.legend()
+        print(ESM)
+        print(ESMi)
+        ax2 = fig.add_subplot(133)
+        plt.axvline(ESM,0,500,color='orange',label = 'Non-integral')
+        plt.axvline(ESMi,0,500,color='red',label = 'Integral')
+        plt.legend()
     plt.show()
 
 distributions = 0
@@ -728,75 +727,78 @@ if distributions == 1:
 
 #########################################################
 
-distributions1 = 0
+distributions1 = 1
 if distributions1 == 1:
     step = 0.0001
-    var_mu = List([i for i in range(3)])
-    var_sigma = List([1+i for i in range(3)])
-    fig,axs = plt.subplots(len(var_mu),2*len(var_sigma))
+    var_mu = [10]
+    number_of_options = [2,5,10]
+    var_sigma = List([1+i*2 for i in range(0,2)])
+    fig,axs = plt.subplots(len(number_of_options),2*len(var_sigma))
+    dist = prd.uniform
     for j in range(len(var_mu)):
         delta_mu = 5
         for k in range(len(var_sigma)):
-            delta_sig = 0 + k
             mu_x = List([var_mu[j],var_mu[j]+delta_mu])
             sigma_x = List([var_sigma[k],var_sigma[k]])
+            low = List([mu_x[0]-np.sqrt(3)*sigma_x[0],mu_x[1]-np.sqrt(3)*sigma_x[1]])
+            high = List([mu_x[0]+np.sqrt(3)*sigma_x[0],mu_x[1]+np.sqrt(3)*sigma_x[1]])
             start = np.sum(mu_x)/len(mu_x) - np.sum(sigma_x)-5
             stop = np.sum(mu_x)/len(mu_x) + np.sum(sigma_x)+5
 
             dis_x = np.round(np.arange(start,stop,step),decimals=4)
-            pdf =  prd.uniform(dis_x,mu_x,sigma_x)
+            pdf =  dist(dis_x,mu_x,sigma_x)
             area = (np.sum(pdf)*step)
             pdf = np.multiply(pdf,1/area)
-            axs[j,2*k].plot(dis_x,pdf)
 
-            number_of_options = [10]
-            for nop in number_of_options:
+            for nop in range(len(number_of_options)):
+                axs[nop,2*k].plot(dis_x,pdf)
                 slices = []
                 mid_slices=[]
-                for i in range(1,nop,1):
-                    ESM = prd.ICPDF(float(i)/nop,mu_x,stop,step,dis_x,pdf)
+                for i in range(1,number_of_options[nop],1):
+                    ESM = prd.ICPDF(float(i)/number_of_options[nop],mu_x,stop,step,dis_x,pdf)
                     slices.append(np.round(ESM,decimals=3))
-                for i in range(2*nop-2,0,-1):
+                for i in range(1,2*number_of_options[nop],1):
                     if i%2!=0:
-                        mid_slices.append(np.round(prd.ICPDF(1.0-(i/(2*nop)),mu_x,stop,step,dis_x,pdf),decimals=3))
+                        mid_slices.append(np.round(prd.ICPDF((i/(2*number_of_options[nop])),mu_x,stop,step,dis_x,pdf),decimals=1))
 
-                number_of_colors = nop
+                number_of_colors = number_of_options[nop]
 
                 color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
                     for i in range(number_of_colors)]
                 for i in range(len(slices)+1):
                     if i!=0 and i!=len(slices):
                         x1 = np.arange(slices[i-1],slices[i],0.0001)
-                        pdf1 =  prd.uniform(x1,mu_x,sigma_x)
+                        pdf1 =  dist(x1,mu_x,sigma_x)
                         pdf1 = np.multiply(pdf1,1/area)
-                        axs[j,2*k].fill_between(x1,0,pdf1,facecolor=color[i])
+                        axs[nop,2*k].fill_between(x1,0,pdf1,facecolor=color[i])
                     elif i==0:
                         x1 = np.arange(start,slices[i],0.0001)
-                        pdf1 =  prd.uniform(x1,mu_x,sigma_x)
+                        pdf1 =  dist(x1,mu_x,sigma_x)
                         pdf1 = np.multiply(pdf1,1/area)
-                        axs[j,2*k].fill_between(x1,0,pdf1,facecolor=color[i])
+                        axs[nop,2*k].fill_between(x1,0,pdf1,facecolor=color[i])
                     elif i==len(slices):
                         x1 = np.arange(slices[-1],stop,0.0001)
-                        pdf1 =  prd.uniform(x1,mu_x,sigma_x)
+                        pdf1 =  dist(x1,mu_x,sigma_x)
                         pdf1 = np.multiply(pdf1,1/area)
-                        axs[j,2*k].fill_between(x1,0,pdf1,facecolor=color[i])
+                        axs[nop,2*k].fill_between(x1,0,pdf1,facecolor=color[i])
                 bests = []
-                for i in range(100):
-                    ref_qual,options_quality = rng.quality(distribution=rng.dx_u,mu_x=mu_x,sigma_x=sigma_x,number_of_options=nop)
-                    best = max(options_quality)
+                for i in range(1000):
+                    ref_qual,options_quality = rng.quality(distribution=rng.dx_u,mu_x=low,sigma_x=high,number_of_options=number_of_options[nop])
+                    available_opt = np.array(np.where(np.array(options_quality) == max(options_quality)))[0]
+                    opt_choosen = np.random.randint(0,len(available_opt))
+                    best = options_quality[available_opt[opt_choosen]]
                     bests.append(best)
-                slices.append(stop)
-                slices.append(stop+1)
-
-                hist, bin_edges = np.histogram(bests,slices) # make the histogram
+                slices = [start]+slices+[stop]
+                bins = np.zeros(number_of_options[nop])
+                for b in bests:
+                    for s in range(len(slices)-1):
+                        if b>slices[s] and b< slices[s+1]:
+                            bins[s] += 1
+                            break
                 # # Plot the histogram heights against integers on the x axis
-                axs[j,2*k+1].bar(range(1,len(hist)+1,1),hist,width=1) 
+                print([slices,mid_slices])
+                axs[nop,2*k+1].bar(mid_slices,bins,width=0.2)
 
-                # # Set the ticks to the middle of the bars
-                axs[j,2*k+1].set_xticks([0.5+i for i,j in enumerate(hist)])
-
-                # # Set the xticklabels to a string that tells us what the bin edges were
-                axs[j,2*k+1].set_xticklabels(['{}'.format(int(slices[i])) for i,j in enumerate(hist)])
 
     plt.show()
 

@@ -22,13 +22,13 @@ WRC_normal = 0
 pval_WRC_normal = 0
 pval_WRC_bimodal_x_gaussian_h = 0
 pval_WRC_uniform_x_gaussian_h = 0
-bimodal_x_normal_h = 0
+bimodal_x_normal_h = 1
 bimodal_x_normal_h_sigma = 0
 uniform_x_uniform_h = 0
 uniform_x_uniform_h_sigma = 0
 uniform_x_normal_h = 0
 uniform_x_normal_h_sigma = 0
-normal_x_normal_h = 1
+normal_x_normal_h = 0
 normal_x_normal_h_sigma = 0
 
 wf = yn.workFlow()
